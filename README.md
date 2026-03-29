@@ -6,10 +6,11 @@ HTML、CSS、JSを使用したリアルタイムな対戦を再現します。
 ## 🚀 セットアップ方法
 
 1. リポジトリをクローン
+   　　　git clone [リポジトリのURL]
 
-   　　1,git clone [リポジトリのURL]
-   　　2,npm install
-   　　3,npm start
+2. VScode内のターミナルに以下のコマンドを入力する
+   　　　npm install
+   　　　npm start
    
 
    📂 フォルダ構成
