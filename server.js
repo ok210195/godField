@@ -161,9 +161,10 @@ function cpuDecide(cpu) {
   return { action:'pass', plusCards:[] };
 }
 function cpuPickDefense(cpu) {
-  const armors = cpu.hand.filter(c => c.type === 'armor');
-  if (!armors.length) return null;
-  return [...armors].sort((a,b) => (b.defense||b.power)-(a.defense||a.power))[0];
+  // 防具カード + 攻守両用カード（weaponでdefense>0）を守備候補にする
+  const defenders = cpu.hand.filter(c => c.type === 'armor' || (c.type === 'weapon' && c.defense > 0));
+  if (!defenders.length) return null;
+  return [...defenders].sort((a,b) => (b.defense||b.power)-(a.defense||a.power))[0];
 }
 
 // ── ログ・スナップ ────────────────────────────────────────────
@@ -214,7 +215,9 @@ io.on('connection', socket => {
 
     // 守備フェーズ：防具カードで受ける
     if (sess.phase==='player-defense') {
-      if (card.type!=='armor') { socket.emit('warn','守備フェーズでは防具カードを選んでください'); return; }
+      // 防具カード OR 攻守両用カード（weapon で defense > 0）なら守備に使える
+      const canDefend = card.type === 'armor' || (card.type === 'weapon' && card.defense > 0);
+      if (!canDefend) { socket.emit('warn','守備フェーズでは防具カードか攻守両用カードを選んでください'); return; }
       sess.player.hand.splice(idx, 1);
       // ★ 守備カード消費 → 即ドロー
       const drew = drawOne(sess, 'player');
@@ -225,6 +228,7 @@ io.on('connection', socket => {
 
     // 攻撃選択フェーズ
     if (sess.phase==='select' && sess.turn==='player') {
+      // 攻守両用カード（weapon で defense > 0）も通常武器として攻撃に使える
       if (card.type==='weapon' && !card.isPlusAtk) {
         sess.player.hand.splice(idx, 1);
         sess.atk = { by:'player', baseCard:card, plusCards:[], totalPower:card.power };

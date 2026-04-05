@@ -423,6 +423,11 @@ body {
 .hc-label.weapon  { color: #ef9a9a; }
 .hc-label.armor   { color: #90caf9; }
 .hc-label.miracle { color: #ce93d8; }
+/* 攻守両用カード：2行になるので小さめに */
+.hc-label.dual    { color: #a5d6a7; font-size: 0.72rem; line-height: 1.2; }
+
+/* 攻守両用カードの枠色 */
+.hc-wrap.dual .hc-img { border-color: rgba(165,214,167,0.6); }
 
 /* ══ カード詳細パネル（ホバー時）══════════════════════════════════ */
 .card-detail-panel {
@@ -442,6 +447,7 @@ body {
 .card-detail-panel.weapon  { border-color: #ef5350; background: #fff8f8; }
 .card-detail-panel.armor   { border-color: #42a5f5; background: #f0f8ff; }
 .card-detail-panel.miracle { border-color: #ab47bc; background: #f8f0ff; }
+.card-detail-panel.dual    { border-color: #66bb6a; background: #f0fff0; }
 
 .cd-img {
     width: 52px; height: 52px;

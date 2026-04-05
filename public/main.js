@@ -106,9 +106,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // カードが攻守両用かどうか（weaponでdefense>0）
+    function isDualCard(card) {
+        return card.type === 'weapon' && card.defense > 0;
+    }
+
     function getPowerLabel(card) {
         if (card.type === 'armor')  return '守' + (card.defense > 0 ? card.defense : card.power);
         if (card.power === 0)       return '回復';
+        if (isDualCard(card))       return '攻' + card.power + '/守' + card.defense;
         if (card.isPlusAtk)         return '+' + card.power;
         return '攻' + card.power;
     }
@@ -357,7 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
         cdAbility.textContent = card.ability || '';
         cdAbility.style.display = card.ability ? 'block' : 'none';
         cdPrice.textContent   = '¥' + card.price;
-        cardDetail.className  = 'card-detail-panel ' + (card.type||'weapon');
+        cardDetail.className  = 'card-detail-panel ' + (isDualCard(card) ? 'dual' : (card.type||'weapon'));
         cardDetail.style.display = 'block';
         // 位置：カードの上に表示
         const rect   = wrapEl.getBoundingClientRect();
@@ -372,6 +378,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ━━━━━━━━━━━━━━ 手札描画 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+    // 手札ソート：武器（攻撃力昇順）→ 攻守両用（攻撃力昇順）→ 防具（防御力昇順）→ 奇跡
+    function sortHand(hand) {
+        return [...hand].sort((a, b) => {
+            const order = c => {
+                if (c.type === 'miracle') return 3;
+                if (c.type === 'armor')   return 2;
+                if (isDualCard(c))        return 1;
+                return 0;  // 通常weapon
+            };
+            const oa = order(a), ob = order(b);
+            if (oa !== ob) return oa - ob;
+            // 同グループ内は攻撃力 or 防御力で昇順
+            if (a.type === 'armor') return (a.defense || a.power) - (b.defense || b.power);
+            return a.power - b.power;
+        });
+    }
+
     function renderHand() {
         handArea.innerHTML = '';
         hideCardDetail();
@@ -380,16 +403,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const isAdding   = currentPhase === 'adding';
         const isBusy     = currentPhase === 'cpu-thinking' || currentPhase === 'cpu-turn' || currentPhase === 'over';
 
-        myHand.forEach(card => {
+        sortHand(myHand).forEach(card => {
             // 選択可否
             let unplayable;
-            if (isBusy)        unplayable = true;
-            else if (isDefPhase) unplayable = card.type !== 'armor';
-            else if (isAdding)   unplayable = !(card.isPlusAtk && card.type === 'weapon');
-            else                 unplayable = card.type === 'armor';  // selectフェーズ：防具は使えない
+            if (isBusy) {
+                unplayable = true;
+            } else if (isDefPhase) {
+                // 守備フェーズ：防具 or 攻守両用カードのみ選べる
+                unplayable = !(card.type === 'armor' || isDualCard(card));
+            } else if (isAdding) {
+                // +カード追加フェーズ：isPlusAtkのweaponのみ
+                unplayable = !(card.isPlusAtk && card.type === 'weapon');
+            } else {
+                // selectフェーズ：純粋な防具(weapon以外のarmor)は使えない
+                // 攻守両用(weapon&defense>0)は攻撃に使える
+                unplayable = card.type === 'armor';
+            }
 
             const wrap = document.createElement('div');
-            wrap.className = 'hc-wrap' + (unplayable ? ' unplayable' : '');
+            const cardClass = isDualCard(card) ? 'dual' : card.type;
+            wrap.className = 'hc-wrap ' + cardClass + (unplayable ? ' unplayable' : '');
 
             // カード画像（typeIndexから自動生成→フォールバック）
             const img = document.createElement('img');
@@ -400,7 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 攻守ラベル
             const label = document.createElement('div');
-            label.className   = 'hc-label ' + card.type;
+            label.className   = 'hc-label ' + (isDualCard(card) ? 'dual' : card.type);
             label.textContent = getPowerLabel(card);
 
             wrap.appendChild(img);
@@ -419,7 +452,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function onCardClick(card) {
         hideCardDetail();
         if (currentPhase === 'player-defense') {
-            if (card.type!=='armor') { flashWarn('🛡 守備フェーズでは防具カードを選んでください'); return; }
+            if (card.type !== 'armor' && !isDualCard(card)) {
+                flashWarn('🛡 守備フェーズでは防具カードか攻守両用カードを選んでください'); return;
+            }
             socket.emit('use-card',{uid:card.uid});
             forgiveBtn.style.display='none';
             currentPhase='cpu-thinking'; phaseLabel.textContent='⏳ ダメージ計算中…'; renderHand();
