@@ -227,12 +227,9 @@ io.on('connection', socket => {
     if (sess.phase==='select' && sess.turn==='player') {
       if (card.type==='weapon' && !card.isPlusAtk) {
         sess.player.hand.splice(idx, 1);
-        // ★ 武器選択時に即ドロー（atk-startedで最新handを送るため）
-        const drewW = drawOne(sess, 'player');
-        if (drewW) addLog(sess, '🎴 '+sess.player.name+' 「'+drewW.name+'」をドロー');
         sess.atk = { by:'player', baseCard:card, plusCards:[], totalPower:card.power };
         sess.phase = 'adding';
-        addLog(sess, '⚔ 「'+card.name+'」(攻'+card.power+')を選択。+カードを重ねるか決定！');
+        addLog(sess, '⚔ 「'+card.name+'」を選択。+カードを重ねるか「決定」を！');
         socket.emit('atk-started', {
           baseCard:card, totalPower:card.power, player:playerSnap(sess.player), log:sess.log
         });
@@ -240,12 +237,9 @@ io.on('connection', socket => {
       }
       if (card.type==='weapon' && card.isPlusAtk) {
         sess.player.hand.splice(idx, 1);
-        // ★ +武器選択時も即ドロー
-        const drewP = drawOne(sess, 'player');
-        if (drewP) addLog(sess, '🎴 '+sess.player.name+' 「'+drewP.name+'」をドロー');
         sess.atk = { by:'player', baseCard:card, plusCards:[], totalPower:card.power };
         sess.phase = 'adding';
-        addLog(sess, '⚔ 「'+card.name+'」(+'+card.power+')を選択。さらに+カードを重ねるか決定！');
+        addLog(sess, '⚔ 「'+card.name+'」(+'+card.power+')を選択。さらに+カードを重ねるか「決定」を！');
         socket.emit('atk-started', {
           baseCard:card, totalPower:card.power, player:playerSnap(sess.player), log:sess.log
         });
@@ -267,9 +261,6 @@ io.on('connection', socket => {
     if (sess.phase==='adding' && sess.turn==='player') {
       if (!card.isPlusAtk || card.type!=='weapon') { socket.emit('warn','+カードのみ追加できます'); return; }
       sess.player.hand.splice(idx, 1);
-      // ★ +カード追加時も即ドロー
-      const drewPlus = drawOne(sess, 'player');
-      if (drewPlus) addLog(sess, '🎴 '+sess.player.name+' 「'+drewPlus.name+'」をドロー');
       sess.atk.plusCards.push(card);
       sess.atk.totalPower += card.power;
       addLog(sess, '➕ 「'+card.name+'」(+'+card.power+') 追加！ 合計攻撃力:'+sess.atk.totalPower);
@@ -294,7 +285,13 @@ io.on('connection', socket => {
       : '⚔ '+sess.player.name+'「'+sess.atk.baseCard.name+'」攻'+sess.atk.totalPower+'で攻撃！';
     addLog(sess, logTxt);
 
-    // ★ ドロー後のplayerSnapを送る
+    // ★ 決定ボタン時点で使った枚数分まとめてドロー
+    const usedCount = 1 + sess.atk.plusCards.length;
+    for (let i = 0; i < usedCount; i++) {
+      const drew = drawOne(sess, 'player');
+      if (drew) addLog(sess, '🎴 '+sess.player.name+' 「'+drew.name+'」をドロー');
+    }
+
     socket.emit('player-attacked', { atkCard:combinedCard, player:playerSnap(sess.player), log:sess.log });
 
     setTimeout(() => {

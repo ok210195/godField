@@ -158,13 +158,19 @@
     <!-- フッター：手札 -->
     <footer class="battle-footer">
         <!-- +カード重ねバー（addingフェーズ中のみ表示） -->
+        <!-- 攻撃バー：重ねたカードを画像で表示 -->
         <div id="atk-bar" class="atk-bar" style="display:none;">
-            <div class="atk-bar-info">
-                <span id="atk-bar-name">カード名</span>
-                <span id="atk-bar-power" class="atk-bar-power">合計攻0</span>
+            <div class="atk-cards-row" id="atk-cards-row">
+                <!-- JSで動的にカード画像を追加 -->
             </div>
-            <button id="atk-confirm-btn" class="atk-confirm-btn">決定！</button>
-            <button id="atk-cancel-btn"  class="atk-cancel-btn">戻す</button>
+            <div class="atk-bar-center">
+                <div class="atk-total-label">合計攻撃力</div>
+                <div class="atk-total-power" id="atk-bar-power">0</div>
+            </div>
+            <div class="atk-bar-btns">
+                <button id="atk-confirm-btn" class="atk-confirm-btn">決定！</button>
+                <button id="atk-cancel-btn"  class="atk-cancel-btn">戻す</button>
+            </div>
         </div>
         <div class="hand-area" id="hand-area"></div>
     </footer>
@@ -193,4 +199,4 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="main.js"></script>
 </body>
-</html>s
+</html>

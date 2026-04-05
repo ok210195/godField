@@ -1,0 +1,455 @@
+/* ══ 既存スタイル（ロビー・オーバーレイ）をそのまま維持 ══════════════════ */
+body {
+    margin: 0; padding: 0;
+    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif;
+    background: radial-gradient(circle, #a8e6cf 0%, #56ab2f 100%);
+    height: 100vh;
+    display: flex; justify-content: center; align-items: center;
+}
+
+#lobby-container {
+    width: 95%; max-width: 1000px; height: 90vh;
+    display: flex; flex-direction: column; color: white;
+}
+
+.lobby-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 5px 15px; background: #00897b; border-bottom: 2px solid #004d40;
+    font-size: 1.2rem;
+}
+
+.lobby-main {
+    flex: 1; display: grid; grid-template-columns: 1fr 1.5fr 1fr;
+    align-items: center; padding: 0 10px; margin-bottom: 5px;
+}
+
+.side-panel { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+
+.panel-label {
+    background: #00695c; padding: 2px 40px; border-radius: 10px;
+    font-size: 2.5rem; font-weight: bold;
+}
+
+.slot-circle {
+    width: 180px; height: 85px; background: #e0e0e0; border: 2px solid #bdbdbd;
+    border-radius: 20px; cursor: pointer; font-size: 3rem; color: #9e9e9e;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.center-list { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+
+.list-item {
+    width: 100%; max-width: 350px; height: 24px; border: 2px solid #4db6ac;
+    border-radius: 12px; background: rgba(255,255,255,0.1);
+    display: flex; justify-content: center; align-items: center;
+}
+
+.list-item.joined   { background: #eceff1; color: #00796b; border: 2px solid #90a4ae; }
+.list-item.cpu-joined { background: #cfd8dc; color: #37474f; border: 2px solid #78909c; font-style: italic; }
+.list-item.team-green  { background: #c8e6c9 !important; color: #2e7d32 !important; border-color: #81c784; }
+.list-item.team-red    { background: #ffcdd2 !important; color: #c62828 !important; border-color: #e57373; }
+.list-item.team-yellow { background: #fff9c4 !important; color: #f9a825 !important; border-color: #fff176; }
+.list-item.team-purple { background: #e1bee7 !important; color: #6a1b9a !important; border-color: #ba68c8; }
+
+.team-slot {
+    width: 180px; height: 70px; border-radius: 15px;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 2.5rem; filter: brightness(0.7); border: 1px solid rgba(0,0,0,0.2);
+    cursor: pointer; transition: transform 0.1s;
+}
+.team-slot:hover { transform: scale(1.05); filter: brightness(1.0); }
+.green  { background: #607d8b; color: #37474f; }
+.red    { background: #8d6e63; color: #4e342e; }
+.yellow { background: #9e9d24; color: #33691e; }
+.purple { background: #5c6bc0; color: #283593; }
+
+.end-time { background: #00695c; padding: 4px 15px; border-radius: 10px; border: 2px solid #4db6ac; text-align: center; }
+.end-time .value { background: white; color: #ef5350; border-radius: 10px; padding: 0 10px; font-weight: bold; font-size: 1.2rem; }
+
+.lobby-footer { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-bottom: 10px; margin-top: -10px; }
+
+.shuffle-btn {
+    background: #8d6e63; color: #3e2723; border: none;
+    width: 380px; height: 70px; border-radius: 20px; font-size: 2.2rem; font-weight: bold; cursor: pointer;
+}
+.start-btn {
+    background: #a1887f; color: #3e2723; border: none;
+    width: 420px; height: 90px; border-radius: 25px; font-size: 3rem; font-weight: bold; cursor: pointer;
+    box-shadow: 0 6px rgba(0,0,0,0.2);
+}
+.start-btn:active { transform: translateY(2px); box-shadow: 0 2px rgba(0,0,0,0.3); }
+
+.cpu-btn {
+    background: #4db6ac; color: #004d40; border: none; padding: 5px 15px; border-radius: 10px;
+    font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-top: -10px;
+}
+.cpu-btn:hover { background: #80cbc4; }
+
+#name-input-overlay {
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    background: rgba(86,171,47,0.9); display: flex; justify-content: center; align-items: center; z-index: 1000;
+}
+.name-dialog {
+    background: #00695c; padding: 30px; border-radius: 20px;
+    border: 3px solid #004d40; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.name-dialog h2 { margin-top:0; color:white; font-size:1.5rem; }
+#user-name-input {
+    width: 250px; padding: 10px; font-size: 1.2rem;
+    border-radius: 10px; border: 2px solid #4db6ac; outline: none; text-align: center;
+}
+#submit-name-btn {
+    display: block; margin: 20px auto 0; padding: 10px 40px;
+    background: #8d7a66; color: #3e2723; border: none; border-radius: 10px;
+    font-size: 1.2rem; font-weight: bold; cursor: pointer;
+}
+.back-btn { background: none; border: none; color: white; font-size: 1.4rem; cursor: pointer; }
+
+/* ══ バトル画面 ══════════════════════════════════════════════════════════════ */
+#battle-container {
+    width: 95%; max-width: 1100px; height: 90vh;
+    display: flex; flex-direction: column; color: white;
+    background: rgba(0,0,0,0.12); border-radius: 14px; overflow: hidden;
+}
+
+/* バトルヘッダー */
+.battle-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 16px; background: #00897b; border-bottom: 2px solid #004d40;
+    flex-shrink: 0;
+}
+.battle-title-area { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+#battle-phase-label { font-size: 1rem; font-weight: bold; color: #e0f7fa; }
+
+/* GFバー */
+.gf-row { display: flex; align-items: center; gap: 6px; }
+.gf-text { font-size: 0.8rem; color: #b2dfdb; font-weight: bold; }
+.gf-track {
+    width: 130px; height: 10px; background: rgba(0,0,0,0.35);
+    border-radius: 5px; overflow: hidden; border: 1px solid #4db6ac;
+}
+#gf-bar {
+    height: 100%; width: 0%; border-radius: 5px;
+    background: linear-gradient(90deg, #a5d6a7, #ffee58, #ef5350);
+    transition: width 0.6s ease;
+}
+#gf-bar.gf-danger { background: #ef5350; }
+#gf-num { font-size: 0.85rem; color: #ffe082; font-weight: bold; min-width: 30px; }
+
+/* バトルメイン：左1.2 右0.8 */
+.battle-main {
+    flex: 1; display: grid; grid-template-columns: 1.3fr 0.7fr;
+    padding: 12px; gap: 12px; overflow: hidden; min-height: 0;
+}
+
+/* 左：アクションビュー */
+.action-view {
+    display: flex; flex-direction: column; align-items: center; gap: 8px; overflow: hidden;
+}
+
+/* 攻撃者→ターゲット（既存HTMLそのまま） */
+.turn-indicator {
+    display: flex; align-items: center; gap: 15px;
+    background: rgba(255,255,255,0.75); padding: 5px 30px; border-radius: 30px;
+    color: #00796b; font-weight: bold; font-size: 1rem; width: 100%;
+    justify-content: center; box-sizing: border-box;
+}
+.participant { display: flex; align-items: center; gap: 6px; }
+.dot { font-size: 0.8rem; }
+.arrow { font-size: 1.5rem; }
+
+/* カード表示（既存HTMLそのまま） */
+.card-action-display {
+    width: 100%; background: #fff; border: 3px solid #4db6ac;
+    border-radius: 12px; padding: 12px 16px; box-sizing: border-box;
+}
+.card-graphic { display: flex; align-items: center; gap: 14px; }
+.card-icon { font-size: 2.8rem; }
+.card-name { color: #004d40; font-size: 1.3rem; font-weight: bold; }
+.card-stats { color: #00796b; font-size: 1.1rem; margin-top: 4px; }
+
+/* ダメージバッジ＋許す（既存） */
+.response-area { display: flex; align-items: center; gap: 16px; }
+.damage-badge { font-size: 1.6rem; font-weight: bold; color: #ef5350; min-width: 50px; text-align: center; }
+.forgive-btn {
+    background: #d32f2f; color: white; font-size: 1.8rem;
+    padding: 10px 60px; border-radius: 15px; border: none; cursor: pointer;
+    font-weight: bold; box-shadow: 0 4px #b71c1c; transition: transform .1s;
+}
+.forgive-btn:active { transform: translateY(2px); box-shadow: 0 2px #b71c1c; }
+
+/* ログ */
+.battle-log {
+    width: 100%; flex: 1; overflow-y: auto; min-height: 80px;
+    background: rgba(0,0,0,0.25); border-radius: 10px;
+    padding: 8px 12px; box-sizing: border-box; font-size: 0.82rem; line-height: 1.7;
+}
+.log-line { border-bottom: 1px solid rgba(255,255,255,0.08); padding: 2px 0; }
+.log-line:first-child { color: #ffe082; font-weight: bold; }
+
+/* 右：ステータスパネル */
+.battle-status-panel {
+    display: flex; flex-direction: column; gap: 10px; justify-content: center;
+}
+.status-card {
+    background: rgba(0,105,92,0.5); border: 2px solid #4db6ac;
+    border-radius: 14px; padding: 12px 14px; box-sizing: border-box;
+}
+.cpu-card { border-color: #ef9a9a; background: rgba(74,20,20,0.4); }
+.sc-name { font-weight: bold; font-size: 1rem; margin-bottom: 8px; color: #e0f7fa; }
+.sc-hp-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.sc-label { font-size: 0.8rem; color: #b2dfdb; min-width: 22px; }
+.sc-bar-track { flex: 1; height: 10px; background: rgba(0,0,0,0.35); border-radius: 5px; overflow: hidden; }
+.sc-bar { height: 100%; border-radius: 5px; width: 100%; transition: width 0.4s; }
+.player-bar { background: linear-gradient(90deg, #66bb6a, #4caf50); }
+.cpu-bar    { background: linear-gradient(90deg, #ef5350, #e53935); }
+.sc-bar.danger { background: #ef5350 !important; animation: pulse 0.8s infinite alternate; }
+@keyframes pulse { from { opacity:1; } to { opacity:0.5; } }
+.sc-val { font-weight: bold; font-size: 1.1rem; min-width: 28px; text-align: right; }
+.sc-bottom { display: flex; gap: 12px; font-size: 0.82rem; color: #b2dfdb; }
+.sc-bottom b { color: #fff; }
+
+.vs-badge {
+    text-align: center; font-size: 1.4rem; font-weight: bold;
+    color: #ffe082; text-shadow: 0 0 8px rgba(255,224,130,0.6);
+}
+
+/* バトルフッター：手札 */
+.battle-footer {
+    background: #004d40; border-top: 2px solid #00695c;
+    padding: 10px 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    flex-shrink: 0;
+}
+
+
+
+/* 結果オーバーレイ */
+#result-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    display: flex; justify-content: center; align-items: center; z-index: 9000;
+}
+.result-box {
+    background: #00695c; border: 4px solid #4db6ac; border-radius: 24px;
+    padding: 40px 60px; text-align: center; box-shadow: 0 0 60px rgba(0,0,0,0.5);
+}
+.result-trophy { font-size: 3rem; margin-bottom: 10px; }
+.result-msg { font-size: 2rem; font-weight: bold; color: #ffe082; margin-bottom: 24px; }
+.retry-btn {
+    background: #a1887f; color: #3e2723; border: none; padding: 12px 50px;
+    border-radius: 16px; font-size: 1.4rem; font-weight: bold; cursor: pointer; font-family: inherit;
+}
+
+/* ダメージフラッシュ */
+.dmg-flash {
+    position: fixed; top: 38%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 3.5rem; font-weight: bold; color: #ef5350; pointer-events: none; z-index: 9999;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+    animation: dmgAnim 0.9s ease-out forwards;
+}
+.dmg-flash.bonus   { color: #ffd54f; }
+.dmg-flash.bonus-2x{ color: #ff6f00; font-size: 4rem; }
+@keyframes dmgAnim {
+    0%   { opacity:1; transform: translate(-50%,-50%) scale(1); }
+    60%  { opacity:1; transform: translate(-50%,-80%) scale(1.4); }
+    100% { opacity:0; transform: translate(-50%,-120%) scale(0.7); }
+}
+
+/* 警告フラッシュ */
+.warn-flash {
+    position: fixed; bottom: 140px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.8); color: #ffcc02; font-size: 1rem; font-weight: bold;
+    padding: 10px 24px; border-radius: 20px; z-index: 9998;
+    animation: warnAnim 2s ease forwards;
+}
+@keyframes warnAnim {
+    0%  { opacity:1; } 70% { opacity:1; } 100% { opacity:0; }
+}
+
+
+
+
+/* ══ 攻撃バー（+カード重ね中に表示）══════════════════════════════ */
+.atk-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(90deg, rgba(183,28,28,0.55), rgba(239,83,80,0.25));
+    border: 2px solid #ef5350;
+    border-radius: 12px;
+    padding: 6px 14px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 4px;
+    min-height: 72px;
+}
+
+/* 重ねたカードのサムネイル列 */
+.atk-cards-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    overflow-x: auto;
+}
+.atk-plus-sign {
+    color: #ffcdd2;
+    font-size: 1.2rem;
+    font-weight: bold;
+    padding: 0 2px;
+    flex-shrink: 0;
+}
+.atk-card-thumb {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+}
+.atk-card-thumb.is-plus .atk-thumb-img {
+    box-shadow: 0 0 0 2px #ffb300;
+}
+.atk-thumb-img {
+    width: 52px;
+    height: 52px;
+    object-fit: cover;
+    border-radius: 5px;
+    border: 2px solid rgba(255,255,255,0.35);
+    background: #1a1a2e;
+}
+.atk-thumb-lbl {
+    font-size: 0.78rem;
+    font-weight: bold;
+    color: #ffcdd2;
+    margin-top: 2px;
+}
+.atk-card-thumb.is-plus .atk-thumb-lbl {
+    color: #ffb300;
+}
+
+/* 中央：合計攻撃力 */
+.atk-bar-center {
+    text-align: center;
+    flex-shrink: 0;
+}
+.atk-total-label {
+    font-size: 0.7rem;
+    color: #ffcdd2;
+    letter-spacing: 0.05em;
+}
+.atk-total-power {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #fff;
+    line-height: 1.1;
+    text-shadow: 0 0 10px rgba(239,83,80,0.8);
+}
+.atk-total-power::before { content: '攻'; font-size: 1rem; color: #ffcdd2; vertical-align: middle; margin-right: 2px; }
+
+/* ボタン群 */
+.atk-bar-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex-shrink: 0;
+}
+.atk-confirm-btn {
+    background: #ef5350; color: #fff; border: none; border-radius: 8px;
+    padding: 8px 18px; font-size: 1rem; font-weight: bold; cursor: pointer; font-family: inherit;
+    box-shadow: 0 3px #b71c1c;
+    transition: transform .1s;
+}
+.atk-confirm-btn:active { transform: translateY(2px); box-shadow: none; }
+.atk-confirm-btn:hover  { background: #c62828; }
+.atk-cancel-btn {
+    background: #455a64; color: #cfd8dc; border: none; border-radius: 8px;
+    padding: 5px 14px; font-size: 0.85rem; cursor: pointer; font-family: inherit;
+}
+.atk-cancel-btn:hover { background: #37474f; }
+
+/* ══ 手札エリア ══════════════════════════════════════════════════ */
+.hand-area {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    justify-content: center;
+    align-items: flex-end;
+    padding: 4px 8px 0;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+}
+
+/* 個別カードラッパー */
+.hc-wrap {
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform .15s, box-shadow .15s;
+    border-radius: 6px;
+    line-height: 0;
+}
+.hc-wrap:hover:not(.unplayable) {
+    transform: translateY(-16px);
+    z-index: 20;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+}
+.hc-wrap.unplayable {
+    filter: brightness(0.38) saturate(0.2);
+    cursor: not-allowed;
+}
+
+/* カード画像（大きめ正方形） */
+.hc-img {
+    display: block;
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 6px;
+    pointer-events: none;
+    user-select: none;
+    border: 2px solid rgba(255,255,255,0.4);
+    background: #1a1a2e;  /* 画像読み込み前の背景色 */
+}
+
+/* 攻撃力/防御力ラベル */
+.hc-label {
+    text-align: center;
+    font-size: 0.88rem;
+    font-weight: bold;
+    padding: 3px 0 2px;
+    border-radius: 0 0 6px 6px;
+    line-height: 1.3;
+    margin-top: -2px;
+    letter-spacing: 0.02em;
+}
+.hc-label.weapon  { color: #ef9a9a; }
+.hc-label.armor   { color: #90caf9; }
+.hc-label.miracle { color: #ce93d8; }
+
+/* ══ カード詳細パネル（ホバー時）══════════════════════════════════ */
+.card-detail-panel {
+    position: fixed;
+    width: 165px;
+    background: #e8f5e9;
+    border: 2px solid #4db6ac;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    z-index: 9990;
+    pointer-events: none;
+}
+.card-detail-panel.weapon  { border-color: #ef5350; background: #fff8f8; }
+.card-detail-panel.armor   { border-color: #42a5f5; background: #f0f8ff; }
+.card-detail-panel.miracle { border-color: #ab47bc; background: #f8f0ff; }
+
+.cd-img {
+    width: 52px; height: 52px;
+    object-fit: cover; border-radius: 4px; flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.15);
+}
+.cd-body { flex:1; overflow:hidden; }
+.cd-name  { font-size:0.82rem; font-weight:bold; color:#004d40; word-break:break-all; }
+.cd-power { font-size:1.05rem; font-weight:bold; color:#00796b; margin-top:3px; }
+.cd-ability { font-size:0.65rem; color:#6a1b9a; margin-top:2px; line-height:1.3; }
+.cd-price { font-size:0.7rem; color:#f57f17; margin-top:2px; font-weight:bold; }
