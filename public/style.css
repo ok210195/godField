@@ -504,3 +504,29 @@ body {
 .cd-power { font-size:1.05rem; font-weight:bold; color:#00796b; margin-top:3px; }
 .cd-ability { font-size:0.65rem; color:#6a1b9a; margin-top:2px; line-height:1.3; }
 .cd-price { font-size:0.7rem; color:#f57f17; margin-top:2px; font-weight:bold; }
+
+/* ── 使ったカード表示エリア（画像対応） ── */
+.action-single {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+}
+.action-card-img {
+    width: 72px; height: 72px; object-fit: cover; border-radius: 8px;
+    border: 2px solid #4db6ac; background: #1a1a2e; flex-shrink: 0;
+}
+.action-info { flex: 1; }
+.action-card-name  { font-size: 1.1rem; font-weight: bold; color: #004d40; }
+.action-card-stats { font-size: 1rem; color: #00796b; margin-top: 4px; }
+
+/* ── 重ね攻撃コンボ表示 ── */
+.action-combo { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
+.action-combo-cards { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.combo-sep { font-size: 1.2rem; font-weight: bold; color: #ef5350; }
+.combo-thumb { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.combo-thumb-img {
+    width: 58px; height: 58px; object-fit: cover; border-radius: 6px;
+    border: 2px solid rgba(255,255,255,0.3); background: #1a1a2e;
+}
+.combo-thumb.is-plus .combo-thumb-img { border-color: #ffb300; }
+.combo-thumb-lbl { font-size: 0.78rem; font-weight: bold; color: #ffcdd2; }
+.combo-thumb.is-plus .combo-thumb-lbl { color: #ffb300; }
+.action-combo-total { font-size: 1.3rem; font-weight: bold; color: #ef5350; letter-spacing: 0.05em; }

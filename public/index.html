@@ -98,14 +98,20 @@
                 </div>
             </div>
 
-            <!-- 使ったカード表示 -->
+            <!-- 使ったカード表示（画像＋重ね情報） -->
             <div class="card-action-display" id="card-action-display">
-                <div class="card-graphic">
-                    <div class="card-icon" id="action-icon">⚔️</div>
-                    <div class="card-info">
-                        <div class="card-name" id="action-card-name">待機中</div>
-                        <div class="card-stats" id="action-card-stats"></div>
+                <!-- 単体カード表示（CPU攻撃・通常攻撃） -->
+                <div class="action-single" id="action-single">
+                    <img id="action-img" class="action-card-img" src="" alt="">
+                    <div class="action-info">
+                        <div class="action-card-name" id="action-card-name">待機中</div>
+                        <div class="action-card-stats" id="action-card-stats"></div>
                     </div>
+                </div>
+                <!-- 重ね攻撃表示（player-attacked で atk-bar の内容をここにも出す） -->
+                <div class="action-combo" id="action-combo" style="display:none;">
+                    <div class="action-combo-cards" id="action-combo-cards"></div>
+                    <div class="action-combo-total" id="action-combo-total"></div>
                 </div>
             </div>
 
