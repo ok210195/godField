@@ -20,9 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const gfNum         = document.getElementById('gf-num');
     const attackerEl    = document.getElementById('attacker-name');
     const targetEl      = document.getElementById('target-name');
-    const actionIcon    = document.getElementById('action-icon');
+    const actionImg     = document.getElementById('action-img');
     const actionName    = document.getElementById('action-card-name');
     const actionStats   = document.getElementById('action-card-stats');
+    const actionSingle  = document.getElementById('action-single');
+    const actionCombo   = document.getElementById('action-combo');
+    const actionComboCards = document.getElementById('action-combo-cards');
+    const actionComboTotal = document.getElementById('action-combo-total');
     const dmgBadge      = document.getElementById('damage-badge');
     const forgiveBtn    = document.getElementById('forgive-btn');
     const handArea      = document.getElementById('hand-area');
@@ -361,19 +365,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.on('player-attacked', ({ atkCard, player, log }) => {
         receiveHand(player); renderHand(); renderLog(log);
-        showCardDisplay(atkCard); setAttackerTarget(pName.textContent,cName.textContent);
-        dmgBadge.textContent='攻'+atkCard.power;
+        setAttackerTarget(pName.textContent, cName.textContent);
+        // 重ね攻撃かどうかで表示を切り替え
+        if (currentAtk && currentAtk.plusCards && currentAtk.plusCards.length > 0) {
+            showComboDisplay(currentAtk.baseCard, currentAtk.plusCards, atkCard.power);
+        } else {
+            showCardDisplay(atkCard);
+            dmgBadge.textContent = '攻' + atkCard.power;
+        }
         currentPhase='cpu-thinking'; phaseLabel.textContent='⏳ CPUが守備を選んでいます…';
         if(player) updateStatusPlayer(player);
-        hideAtkBar();
+        // atk-barは残したまま（どのカードで攻撃したか見える）
+        // hideAtkBar(); ← 呼ばない
     });
 
     socket.on('cpu-attacked', ({ atkCard, log }) => {
-        renderLog(log); showCardDisplay(atkCard);
-        setAttackerTarget(cName.textContent,pName.textContent);
-        dmgBadge.textContent='攻'+atkCard.power;
-        forgiveBtn.style.display='block';
-        currentPhase='player-defense'; phaseLabel.textContent='🛡 守備カードを選ぶか「許す」';
+        renderLog(log);
+        setAttackerTarget(cName.textContent, pName.textContent);
+        // CPUのカードにはiconがある（サーバーから送られてくるcombinedCardにiconが含まれている）
+        showCardDisplay(atkCard);
+        dmgBadge.textContent = '攻' + atkCard.power;
+        forgiveBtn.style.display = 'block';
+        currentPhase = 'player-defense';
+        phaseLabel.textContent = '🛡 守備カードを選ぶか「許す」';
         renderHand();
     });
 
@@ -382,6 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderHand(); showDamageFlash(damage,bonus);
         forgiveBtn.style.display='none'; dmgBadge.textContent='';
         hideAtkBar(); hideDefBar();
+        showCardDisplay(null);  // カード表示をリセット
     });
 
     socket.on('miracle-used', ({ player, cpu, gf, log }) => {
@@ -393,7 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
         receiveHand(player); if(player) updateStatusPlayer(player);
         renderLog(log); currentPhase='select';
         setAttackerTarget(pName.textContent,cName.textContent);
-        showCardDisplay(null); phaseLabel.textContent='🃏 武器 or 奇跡カードを選ぼう';
+        showCardDisplay(null); hideAtkBar(); phaseLabel.textContent='🃏 武器 or 奇跡カードを選ぼう';
         forgiveBtn.style.display='none'; hideAtkBar(); hideDefBar(); renderHand();
     });
 
@@ -563,7 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
         } else if (currentPhase === 'adding') {
-            // +カードを追加 aaaaa
+            // +カードを追加
             if (!card.isPlusAtk || card.type!=='weapon') { flashWarn('+カードのみ追加できます'); return; }
             socket.emit('use-card',{uid:card.uid});
         }
@@ -587,11 +602,58 @@ document.addEventListener('DOMContentLoaded', () => {
     function setAttackerTarget(a,t){ attackerEl.textContent=a; targetEl.textContent=t; }
 
     const TYPE_ICONS={weapon:'⚔️',armor:'🛡️',miracle:'✨'};
+    // 単体カード表示（CPU攻撃・通常攻撃）
     function showCardDisplay(card) {
-        if(!card){ actionIcon.textContent='─';actionName.textContent='待機中';actionStats.textContent='';dmgBadge.textContent='';return;}
-        actionIcon.textContent=TYPE_ICONS[card.type]||'🃏';
-        actionName.textContent=card.name;
-        actionStats.textContent=getPowerLabel(card);
+        // コンボ表示を隠す
+        actionCombo.style.display  = 'none';
+        actionSingle.style.display = 'flex';
+        if (!card) {
+            actionImg.src = '';
+            actionImg.style.display = 'none';
+            actionName.textContent  = '待機中';
+            actionStats.textContent = '';
+            dmgBadge.textContent    = '';
+            return;
+        }
+        // 画像を表示
+        actionImg.style.display = 'block';
+        setImgWithFallback(actionImg, card);
+        actionName.textContent  = card.name;
+        actionStats.textContent = getPowerLabel(card);
+    }
+
+    // 重ね攻撃表示（baseCard + plusCards を並べる）
+    function showComboDisplay(baseCard, plusCards, totalPower) {
+        actionSingle.style.display = 'none';
+        actionCombo.style.display  = 'flex';
+        actionComboCards.innerHTML = '';
+
+        // baseCard
+        actionComboCards.appendChild(makeComboThumb(baseCard, false));
+        // plusCards
+        plusCards.forEach(c => {
+            const sep = document.createElement('span');
+            sep.className = 'combo-sep';
+            sep.textContent = '＋';
+            actionComboCards.appendChild(sep);
+            actionComboCards.appendChild(makeComboThumb(c, true));
+        });
+        actionComboTotal.textContent = '合計攻' + totalPower;
+        dmgBadge.textContent = '攻' + totalPower;
+    }
+
+    function makeComboThumb(card, isPlus) {
+        const wrap = document.createElement('div');
+        wrap.className = 'combo-thumb' + (isPlus ? ' is-plus' : '');
+        const img = document.createElement('img');
+        setImgWithFallback(img, card);
+        img.className = 'combo-thumb-img';
+        const lbl = document.createElement('div');
+        lbl.className = 'combo-thumb-lbl';
+        lbl.textContent = isPlus ? '+' + card.power : '攻' + card.power;
+        wrap.appendChild(img);
+        wrap.appendChild(lbl);
+        return wrap;
     }
 
     function updateStatus(player,cpu,gf){
@@ -626,4 +688,4 @@ document.addEventListener('DOMContentLoaded', () => {
         el.className='warn-flash'; el.textContent=msg;
         document.body.appendChild(el); setTimeout(()=>el.remove(),2000);
     }
-});s
+});
