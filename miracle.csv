@@ -1,4 +1,4 @@
-id,name,type,attribute,attack,ability,image
+id,name,type,attribute,ability,description,image
 1,火の玉,奇跡,火,+攻2,,miracle_01.png
 2,氷,奇跡,水,攻4,,miracle_02.png
 3,闇,奇跡,闇,攻5,,miracle_03.png
