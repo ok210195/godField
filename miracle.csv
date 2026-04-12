@@ -1,0 +1,7 @@
+id,name,type,attribute,ability,description,image
+1,火の玉,奇跡,火,+攻2,,miracle_01.png
+2,氷,奇跡,水,攻4,,miracle_02.png
+3,闇,奇跡,闇,攻5,,miracle_03.png
+4,大木,奇跡,木,攻6,,miracle_04.png
+5,岩,奇跡,土,攻8,,miracle_05.png
+6,炎,奇跡,火,攻10,,miracle_06.png
