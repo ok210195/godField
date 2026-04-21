@@ -22,11 +22,58 @@ const db = new sqlite3.Database(DB_PATH, err => {
   console.log('DB接続OK（新規作成）');
 });
 
-const TYPE_MAP = { '\u6b66\u5668':'weapon', '\u9632\u5177':'armor', '\u5947\u8de9':'miracle' };
+const TYPE_MAP = { '武器':'weapon', '防具':'armor', '奇跡':'miracle', '雑貨':'sundry' };
+// 属性マップ（フル形式・短縮形・別表記すべて対応）
 const ATTR_MAP = {
-  '\u7121\u5c5e\u6027':'none', '\u706b':'fire', '\u6c34':'water', '\u6728':'wood',
-  '\u5149':'light', '\u95c7':'dark', '\u708e':'fire', '\u6c37':'water',
+  '無属性':'none',
+  '火属性':'fire',  '火':'fire',  '炎属性':'fire',  '炎':'fire',
+  '水属性':'water', '水':'water', '氷属性':'water', '氷':'water',
+  '木属性':'wood',  '木':'wood',
+  '土属性':'earth', '土':'earth',
+  '光属性':'light', '光':'light',
+  '闇属性':'dark',  '闇':'dark',
 };
+
+// ── 属性システム ─────────────────────────────────────────────
+// 攻撃属性に対して有効な防御属性かどうかを判定
+// 光属性は火・水・木・土の代わりになれる（防御側として）
+function defenseCanBlock(atkAttr, defAttr) {
+  if (atkAttr === 'light') return false;          // 光：どの属性でも防御できない（貫通）
+  if (atkAttr === 'none' || atkAttr === 'dark') return true; // 無・闇：どの属性でも防御できる
+
+  // 光属性の防具は火・水・木・土すべての攻撃を防げる
+  if (defAttr === 'light') return ['fire','water','wood','earth'].includes(atkAttr);
+
+  // 各属性の有効なカウンター
+  const COUNTER = {
+    fire:  'water',  // 火の攻撃は水で防御
+    water: 'fire',   // 水の攻撃は火で防御
+    wood:  'earth',  // 木の攻撃は土で防御
+    earth: 'wood',   // 土の攻撃は木で防御
+  };
+  return COUNTER[atkAttr] === defAttr;
+}
+
+// 複数カードのコンボ属性を決定（異なる属性が混在→無属性）
+function combineAttrs(attrs) {
+  const unique = [...new Set(attrs.filter(a => a && a !== 'none'))];
+  if (unique.length === 0) return 'none';
+  if (unique.length === 1) return unique[0];
+  return 'none'; // 属性が混在→無属性に
+}
+
+// 属性の日本語表示
+const ATTR_LABEL = {
+  none:'無属性', fire:'火属性', water:'水属性',
+  wood:'木属性', earth:'土属性', light:'光属性', dark:'闇属性',
+};
+// ── ターゲット選択が必要な雑貨かチェック ─────────────────────────────
+function needsTargetSelect(card) {
+  const ab = (card.ability || '').toLowerCase();
+  return ab.startsWith('hp_plus') || ab.startsWith('mp_plus');
+}
+
+
 
 let CARDS = [];
 
@@ -84,8 +131,16 @@ db.serialize(() => {
           typeIndex: typeCount[t],
         };
       });
-      console.log('カード読込: '+CARDS.length+'枚');
-      CARDS.slice(0,3).forEach(c=>console.log('  例) ['+c.id+'] '+c.name+' icon:"'+c.icon+'"'));
+      const armorCards = CARDS.filter(c=>c.type==='armor');
+      console.log('カード読込: '+CARDS.length+'枚 (武器:'
+        +CARDS.filter(c=>c.type==='weapon').length+'枚, 防具:'+armorCards.length+'枚, 奇跡:'
+        +CARDS.filter(c=>c.type==='miracle').length+'枚)');
+      // 防具カードのiconを確認
+      console.log('--- 防具カード例 ---');
+      armorCards.slice(0,3).forEach(c=>console.log('  ['+c.id+'] '+c.name+' type:'+c.type+' icon:"'+c.icon+'" defense:'+c.defense));
+      if(armorCards.length>0&&!armorCards[0].icon){
+        console.error('⚠️ 防具カードのiconが空です！CSVを確認してください');
+      }
     });
   });
 });
@@ -121,22 +176,20 @@ function canDefend(card) {
   return card.type==='armor' || isDualCard(card);
 }
 
-// ── 元素相性 ──────────────────────────────────────────────────
-const ELEM = {
-  fire:{fire:1.0,water:0.5,wood:1.5,light:1.0,dark:1.0,none:1.0},
-  water:{fire:1.5,water:1.0,wood:0.5,light:1.0,dark:1.0,none:1.0},
-  wood:{fire:0.5,water:1.5,wood:1.0,light:1.0,dark:1.0,none:1.0},
-  light:{fire:1.0,water:1.0,wood:1.0,light:1.0,dark:2.0,none:1.0},
-  dark:{fire:1.0,water:1.0,wood:1.0,light:2.0,dark:1.0,none:1.0},
-  none:{fire:1.0,water:1.0,wood:1.0,light:1.0,dark:1.0,none:1.0},
-};
-function elemBonus(a,d) { return ((ELEM[a]||ELEM.none)[d])||1.0; }
+
 
 // ── CPU AI ────────────────────────────────────────────────────
 function cpuDecide(cpu) {
   const weapons  = cpu.hand.filter(c=>c.type==='weapon');
   const miracles = cpu.hand.filter(c=>c.type==='miracle');
-  if (cpu.hp<=15) { const heal=miracles.find(c=>c.power===0||c.attribute==='light'); if(heal) return {action:'miracle',card:heal,plusCards:[]}; }
+  const sundries = cpu.hand.filter(c=>c.type==='sundry');
+  // HP低いとき：HP回復雑貨を優先
+  if (cpu.hp<=15) {
+    const hpItem = sundries.find(c=>(c.ability||'').match(/\+HP/i));
+    if (hpItem) return {action:'sundry', card:hpItem, plusCards:[]};
+    const heal=miracles.find(c=>c.power===0||c.attribute==='light');
+    if(heal) return {action:'miracle',card:heal,plusCards:[]};
+  }
   if (weapons.length) {
     const normals=weapons.filter(c=>!c.isPlusAtk);
     const base=normals.length?[...normals].sort((a,b)=>b.power-a.power)[0]:[...weapons].sort((a,b)=>b.power-a.power)[0];
@@ -236,6 +289,20 @@ io.on('connection', socket=>{
         applyMiracle(socket,sess,card,'player');
         return;
       }
+      if(card.type==='sundry'){
+        sess.player.hand.splice(idx,1);
+        const drew=drawOne(sess,'player');
+        if(drew) addLog(sess,'🎴 '+sess.player.name+' 「'+drew.name+'」をドロー');
+        // HP/MP回復系は使用先を選ばせる
+        if(needsTargetSelect(card)){
+          sess.phase='target-select';
+          sess.pendingSundry=card;
+          socket.emit('need-target',{card,player:playerSnap(sess.player),cpu:cpuSnap(sess.cpu)});
+        } else {
+          applySundry(socket,sess,card,'player','player');
+        }
+        return;
+      }
       socket.emit('warn','攻撃フェーズでは武器か奇跡カードを使ってください');
       return;
     }
@@ -274,7 +341,7 @@ io.on('connection', socket=>{
         drawOne(sess,'cpu');
       });
       if(!defCards.length) addLog(sess,sess.cpu.name+' は防御できず！');
-      resolveAttack(socket,sess,totalDef>0?{name:defCards.map(c=>c.name).join('＋'),defense:totalDef,attribute:'none'}:null);
+      resolveAttack(socket,sess,totalDef>0?{name:defCards.map(c=>c.name).join('＋'),defense:totalDef,attribute:combineAttrs(defCards.map(c=>c.attribute))}:null);
     },1000);
   });
 
@@ -287,9 +354,21 @@ io.on('connection', socket=>{
     // 守備カードを消費した分ドロー
     const count=sess.def.cards.length;
     for(let i=0;i<count;i++){const drew=drawOne(sess,'player');if(drew) addLog(sess,'🎴 '+sess.player.name+' 「'+drew.name+'」をドロー');}
-    const combinedDef={name:sess.def.cards.map(c=>c.name).join('＋'),defense:sess.def.totalDefense,attribute:'none'};
+    const defAttrCombined=combineAttrs(sess.def.cards.map(c=>c.attribute));
+    const combinedDef={name:sess.def.cards.map(c=>c.name).join('＋'),defense:sess.def.totalDefense,attribute:defAttrCombined};
     sess.def=null;
     resolveAttack(socket,sess,combinedDef);
+  });
+
+
+  // ── 雑貨のターゲット決定 ─────────────────────────────────────────
+  socket.on('sundry-target', ({ target }) => {
+    const sess = sessions[socket.id];
+    if (!sess || sess.phase !== 'target-select' || !sess.pendingSundry) return;
+    const card = sess.pendingSundry;
+    sess.pendingSundry = null;
+    sess.phase = 'select';
+    applySundry(socket, sess, card, 'player', target);
   });
 
   // ── 許す（無防備）────────────────────────────────────────────
@@ -325,23 +404,58 @@ io.on('connection', socket=>{
   socket.on('disconnect',()=>{delete sessions[socket.id];});
 });
 
-// ── 攻撃解決 ─────────────────────────────────────────────────
+// ── 攻撃解決（新属性システム） ────────────────────────────────
 function resolveAttack(socket,sess,defCard){
   const atk=sess.atk; if(!atk) return;
   const defender=atk.by==='player'?sess.cpu:sess.player;
-  const atkPow =(atk.card?atk.card.power:atk.totalPower||atk.baseCard.power);
-  const atkAttr=(atk.card||atk.baseCard).attribute;
-  const bonus  =elemBonus(atkAttr,defCard?defCard.attribute:'none');
-  const atkVal =Math.round(atkPow*bonus);
-  const defVal =defCard?(defCard.defense>0?defCard.defense:defCard.power):0;
-  const dmg    =Math.max(0,atkVal-defVal);
-  defender.hp  =Math.max(0,defender.hp-dmg);
-  sess.gf      =Math.min(100,sess.gf+Math.ceil(dmg/4));
-  sess.atk     =null; sess.def=null;
-  const bt=bonus>=2?'🔥相性2倍！ ':bonus>=1.5?'⚡相性有利！ ':bonus<=0.5?'💧相性不利 ':'';
-  const dt=defCard?'「'+defCard.name+'」(守'+defVal+') → ':'無防備 → ';
-  addLog(sess,bt+dt+(dmg>0?dmg+'ダメージ！':'ガード！')+' '+defender.name+' HP:'+defender.hp);
-  const payload={damage:dmg,bonus,defCard:defCard?{name:defCard.name}:null,player:playerSnap(sess.player),cpu:cpuSnap(sess.cpu),gf:sess.gf,log:sess.log};
+  const atkPow=(atk.card?atk.card.power:atk.totalPower||atk.baseCard.power);
+
+  // コンボ攻撃の属性決定（異なる属性が混在→無属性）
+  const atkCards=[atk.baseCard,...(atk.plusCards||[])];
+  const atkAttr=combineAttrs(atkCards.map(c=>c.attribute));
+
+  // 防御が属性的に有効かチェック
+  const defAttr=defCard?defCard.attribute:'none';
+  const defEffective=!!defCard&&defenseCanBlock(atkAttr,defAttr);
+  const defVal=defEffective?(defCard.defense>0?defCard.defense:defCard.power):0;
+  let dmg=Math.max(0,atkPow-defVal);
+
+  // 闇属性：ダメージを少しでも受けるとHP0になる
+  let isDarkInstakill=false;
+  if(atkAttr==='dark'&&dmg>0){
+    isDarkInstakill=true;
+    defender.hp=0;
+  } else {
+    defender.hp=Math.max(0,defender.hp-dmg);
+  }
+
+  sess.gf=Math.min(100,sess.gf+Math.ceil(dmg/4));
+  sess.atk=null; sess.def=null;
+
+  // ログメッセージ
+  const aLabel=ATTR_LABEL[atkAttr]||atkAttr;
+  let attrTag='';
+  if(atkAttr==='light')      attrTag='✨ 光属性！防御不能！ ';
+  else if(isDarkInstakill)   attrTag='🌑 闇属性！HP0！ ';
+  else if(atkAttr==='dark')  attrTag='🌑 闇属性 ';
+  else if(defCard&&!defEffective&&atkAttr!=='none') attrTag='⚠ 属性不一致！防御無効 ';
+  else if(defCard&&defEffective&&atkAttr!=='none')  attrTag='✅ 属性有効！ ';
+
+  const defInfo=defCard
+    ?(defEffective?'「'+defCard.name+'」(守'+defVal+')':'「'+defCard.name+'」(無効)')
+    :'無防備';
+  addLog(sess,attrTag+defInfo+' → '+(dmg>0?dmg+'ダメージ！':'ガード！')+' '+defender.name+' HP:'+defender.hp);
+
+  const payload={
+    damage:dmg,
+    atkAttr,
+    defEffective,
+    isDark:atkAttr==='dark',
+    isLight:atkAttr==='light',
+    isDarkInstakill,
+    defCard:defCard?{name:defCard.name}:null,
+    player:playerSnap(sess.player),cpu:cpuSnap(sess.cpu),gf:sess.gf,log:sess.log
+  };
   if(checkOver(socket,sess,payload)) return;
   sess.phase='select';
   socket.emit('attack-resolved',payload);
@@ -358,6 +472,55 @@ function applyMiracle(socket,sess,card,who){
   if(checkOver(socket,sess,payload)) return;
   sess.phase='select';socket.emit('miracle-used',payload);
   if(who==='player') endPlayerTurn(socket,sess);
+}
+
+function applySundry(socket, sess, card, who, target) {
+  // who    = 'player' | 'cpu'  （カードを使ったのは誰か）
+  // target = 'player' | 'cpu'  （効果の対象。未指定なら使用者に適用）
+  const ab  = (card.ability || '').trim();
+  const abL = ab.toLowerCase();
+
+  // HP/MP回復系
+  const hpMatch = abL.match(/^hp_plus_(\d+)/);
+  const mpMatch = abL.match(/^mp_plus_(\d+)/);
+
+  if (hpMatch || mpMatch) {
+    const targetWho = target || who;
+    const tgt = targetWho === 'player' ? sess.player : sess.cpu;
+    let msg = '';
+    if (hpMatch) {
+      const val = Number(hpMatch[1]);
+      tgt.hp = Math.min(40, tgt.hp + val);
+      msg = '💖 HP+' + val + '！(HP:' + tgt.hp + ')';
+    }
+    if (mpMatch) {
+      const val = Number(mpMatch[1]);
+      tgt.mp = Math.min(40, tgt.mp + val);
+      msg = '💙 MP+' + val + '！(MP:' + tgt.mp + ')';
+    }
+    addLog(sess, sess[who === 'player' ? 'player' : 'cpu'].name + '「' + card.name + '」→ ' + tgt.name + ' ' + msg);
+    const payload = { player:playerSnap(sess.player), cpu:cpuSnap(sess.cpu), gf:sess.gf, log:sess.log };
+    if (checkOver(socket, sess, payload)) return;
+    sess.phase = 'select';
+    socket.emit('sundry-used', payload);
+    if (who === 'player') endPlayerTurn(socket, sess);
+    return;
+  }
+
+  // 旧フォールバック（+HP10 など日本語形式）
+  let msg = '';
+  const hpMatchJp = ab.match(/[+＋]HP(\d+)/i);
+  const mpMatchJp = ab.match(/[+＋]MP(\d+)/i);
+  const me = who === 'player' ? sess.player : sess.cpu;
+  if (hpMatchJp) { const val=Number(hpMatchJp[1]); me.hp=Math.min(40,me.hp+val); msg+='💖 HP+'+val+'！(HP:'+me.hp+') '; }
+  if (mpMatchJp) { const val=Number(mpMatchJp[1]); me.mp=Math.min(40,me.mp+val); msg+='💙 MP+'+val+'！(MP:'+me.mp+') '; }
+  if (!msg) msg = '（' + (ab || '効果なし') + '）';
+  addLog(sess, me.name + '「' + card.name + '」' + msg.trim());
+  const payload = { player:playerSnap(sess.player), cpu:cpuSnap(sess.cpu), gf:sess.gf, log:sess.log };
+  if (checkOver(socket, sess, payload)) return;
+  sess.phase = 'select';
+  socket.emit('sundry-used', payload);
+  if (who === 'player') endPlayerTurn(socket, sess);
 }
 
 function doCpuTurn(socket,sess){
@@ -379,6 +542,12 @@ function doCpuTurn(socket,sess){
     sess.cpu.hand.splice(sess.cpu.hand.findIndex(c=>c.uid===card.uid),1);
     drawOne(sess,'cpu');
     applyMiracle(socket,sess,card,'cpu');
+  } else if(action==='sundry'){
+    sess.cpu.hand.splice(sess.cpu.hand.findIndex(c=>c.uid===card.uid),1);
+    drawOne(sess,'cpu');
+    // CPU 雑貨: HP/MP回復は自分に使う（将来的にHP低い方を選ぶ余地あり）
+    const cpuTarget = needsTargetSelect(card) ? 'cpu' : 'cpu';
+    applySundry(socket,sess,card,'cpu',cpuTarget);
   } else {
     addLog(sess,sess.cpu.name+' はパス');sess.turn='player';
     addLog(sess,'🔷 '+sess.player.name+' のターン');

@@ -27,10 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const actionCombo   = document.getElementById('action-combo');
     const actionComboCards = document.getElementById('action-combo-cards');
     const actionComboTotal = document.getElementById('action-combo-total');
-    const dmgBadge      = document.getElementById('damage-badge');
     const forgiveBtn    = document.getElementById('forgive-btn');
     const handArea      = document.getElementById('hand-area');
-    const logEl         = document.getElementById('battle-log');
     const retryBtn      = document.getElementById('retry-btn');
     const backBtn       = document.getElementById('battle-back-btn');
     const pName         = document.getElementById('player-sc-name');
@@ -51,6 +49,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const cdPower       = document.getElementById('cd-power');
     const cdAbility     = document.getElementById('cd-ability');
     const cdPrice       = document.getElementById('cd-price');
+    // 使ったカードパネル（右下）
+    const usedCardPanel = document.getElementById('used-card-panel');
+    const usedCardImg   = document.getElementById('used-card-img');
+    const usedCardName  = document.getElementById('used-card-name');
+    const usedCardStat  = document.getElementById('used-card-stat');
+    const usedCardPrice = document.getElementById('used-card-price');
+    // バトルログは廃止（logElをnullにして呼び出しを無害化）
+    const logEl = null;
     // +カード重ねUI
     const atkBar        = document.getElementById('atk-bar');
     const atkBarName    = document.getElementById('atk-bar-name');
@@ -105,15 +111,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function setImgWithFallback(imgEl, card) {
         if (card.icon && card.icon.trim() !== '') {
             const imgPath = 'images/' + card.icon;
-            console.log('[画像]', card.name, '→', imgPath);
             imgEl.src = imgPath;
             imgEl.onerror = () => {
-                console.warn('[画像 404]', imgPath, '→ SVGフォールバック');
                 imgEl.onerror = null;
                 imgEl.src = makeSVGUrl(card);
             };
         } else {
-            console.log('[画像なし]', card.name, '→ SVGフォールバック');
             imgEl.src = makeSVGUrl(card);
         }
     }
@@ -125,8 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getPowerLabel(card) {
         if (card.type === 'armor')  return '守' + (card.defense > 0 ? card.defense : card.power);
-        if (card.power === 0)       return '回復';
+        if (card.type === 'sundry') return card.ability ? card.ability.slice(0, 6) : '雑貨';
         if (isDualCard(card))       return '攻' + card.power + '/守' + card.defense;
+        if (card.power === 0)       return '回復';
         if (card.isPlusAtk)         return '+' + card.power;
         return '攻' + card.power;
     }
@@ -336,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
         phaseLabel.textContent = '➕ +カードを重ねるか「決定」を押そう';
         showAtkBar(baseCard, totalPower);
         showCardDisplay(baseCard);
-        dmgBadge.textContent = '攻' + totalPower;
+        // dmgBadge廃止
         renderHand();
     });
 
@@ -346,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStatusPlayer(player);
         renderLog(log);
         updateAtkBar(plusCard, totalPower);   // plusCardを渡してサムネイル追加
-        dmgBadge.textContent = '攻' + totalPower;
+        // dmgBadge廃止
         renderHand();
     });
 
@@ -359,7 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPhase = 'select';
         phaseLabel.textContent = '🃏 武器 or 奇跡カードを選ぼう';
         showCardDisplay(null);
-        dmgBadge.textContent = '';
+        // dmgBadge廃止
         renderHand();
     });
 
@@ -371,7 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showComboDisplay(currentAtk.baseCard, currentAtk.plusCards, atkCard.power);
         } else {
             showCardDisplay(atkCard);
-            dmgBadge.textContent = '攻' + atkCard.power;
+            // dmgBadge廃止
         }
         currentPhase='cpu-thinking'; phaseLabel.textContent='⏳ CPUが守備を選んでいます…';
         if(player) updateStatusPlayer(player);
@@ -384,19 +388,29 @@ document.addEventListener('DOMContentLoaded', () => {
         setAttackerTarget(cName.textContent, pName.textContent);
         // CPUのカードにはiconがある（サーバーから送られてくるcombinedCardにiconが含まれている）
         showCardDisplay(atkCard);
-        dmgBadge.textContent = '攻' + atkCard.power;
+        // dmgBadge廃止
         forgiveBtn.style.display = 'block';
         currentPhase = 'player-defense';
         phaseLabel.textContent = '🛡 守備カードを選ぶか「許す」';
         renderHand();
     });
 
-    socket.on('attack-resolved', ({ damage, bonus, defCard, player, cpu, gf, log }) => {
+    socket.on('attack-resolved', ({ damage, atkAttr, defEffective, isDark, isLight, isDarkInstakill, defCard, player, cpu, gf, log }) => {
         receiveHand(player); updateStatus(player,cpu,gf); renderLog(log);
-        renderHand(); showDamageFlash(damage,bonus);
-        forgiveBtn.style.display='none'; dmgBadge.textContent='';
+        renderHand(); showDamageFlash(damage, { atkAttr, defEffective, isDark, isLight, isDarkInstakill });
+        forgiveBtn.style.display='none'; // dmgBadge廃止
         hideAtkBar(); hideDefBar();
         showCardDisplay(null);  // カード表示をリセット
+    });
+
+    // ── 雑貨: ターゲット選択要求 ─────────────────────────────────
+    socket.on('need-target', ({ card, player, cpu }) => {
+        showTargetModal(card, player, cpu);
+    });
+
+    socket.on('sundry-used', ({ player, cpu, gf, log }) => {
+        receiveHand(player); updateStatus(player,cpu,gf); renderLog(log);
+        renderHand(); forgiveBtn.style.display='none';
     });
 
     socket.on('miracle-used', ({ player, cpu, gf, log }) => {
@@ -491,7 +505,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function sortHand(hand) {
         return [...hand].sort((a, b) => {
             const order = c => {
-                if (c.type === 'miracle') return 3;
+                if (c.type === 'miracle') return 4;
+                if (c.type === 'sundry')  return 3;
                 if (c.type === 'armor')   return 2;
                 if (isDualCard(c))        return 1;
                 return 0;  // 通常weapon
@@ -524,13 +539,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 // +カード追加フェーズ：isPlusAtkのweaponのみ
                 unplayable = !(card.isPlusAtk && card.type === 'weapon');
             } else {
-                // selectフェーズ：純粋な防具(weapon以外のarmor)は使えない
-                // 攻守両用(weapon&defense>0)は攻撃に使える
-                unplayable = card.type === 'armor';
+                // selectフェーズ：防具・雑貨は使えない（武器・奇跡のみ）
+                unplayable = card.type === 'armor';  // sundryはselectフェーズで使用可
             }
 
             const wrap = document.createElement('div');
-            const cardClass = isDualCard(card) ? 'dual' : card.type;
+            const cardClass = isDualCard(card) ? 'dual' : (card.type || 'weapon');
             wrap.className = 'hc-wrap ' + cardClass + (unplayable ? ' unplayable' : '');
 
             // カード画像（typeIndexから自動生成→フォールバック）
@@ -565,16 +579,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 flashWarn('🛡 防具カードか攻守両用カードを選んでください'); return;
             }
             socket.emit('use-card',{uid:card.uid});
-            forgiveBtn.style.display='none';
-            currentPhase='cpu-thinking'; phaseLabel.textContent='⏳ ダメージ計算中…'; renderHand();
+            // ★ フェーズはサーバーから def-started / def-added で更新される
+            // ここでは cpu-thinking にしない（重ね守備できなくなるため）
+            renderHand();
 
         } else if (currentPhase === 'select') {
-            if (card.type==='weapon'||card.type==='miracle') {
+            if (card.type==='weapon'||card.type==='miracle'||card.type==='sundry') {
                 socket.emit('use-card',{uid:card.uid});
-                currentPhase='cpu-thinking'; // サーバー応答待ち（atk-startedで上書き）
+                currentPhase='cpu-thinking';
                 renderHand();
             } else {
-                flashWarn('攻撃フェーズでは武器か奇跡カードを使ってください');
+                flashWarn('攻撃フェーズでは武器・奇跡・雑貨カードを使ってください');
             }
 
         } else if (currentPhase === 'adding') {
@@ -604,22 +619,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const TYPE_ICONS={weapon:'⚔️',armor:'🛡️',miracle:'✨'};
     // 単体カード表示（CPU攻撃・通常攻撃）
     function showCardDisplay(card) {
-        // コンボ表示を隠す
         actionCombo.style.display  = 'none';
-        actionSingle.style.display = 'flex';
         if (!card) {
-            actionImg.src = '';
-            actionImg.style.display = 'none';
-            actionName.textContent  = '待機中';
-            actionStats.textContent = '';
-            dmgBadge.textContent    = '';
+            actionSingle.style.display = 'none';
+            if (usedCardPanel) usedCardPanel.style.display = 'none';
             return;
         }
-        // 画像を表示
+        // メインエリアのカード表示
+        actionSingle.style.display = 'flex';
         actionImg.style.display = 'block';
         setImgWithFallback(actionImg, card);
         actionName.textContent  = card.name;
         actionStats.textContent = getPowerLabel(card);
+        // 右下パネルにも表示
+        if (usedCardPanel) {
+            setImgWithFallback(usedCardImg, card);
+            usedCardName.textContent  = card.name;
+            usedCardStat.textContent  = getPowerLabel(card);
+            usedCardPrice.textContent = card.price ? '¥' + card.price : '';
+            usedCardPanel.style.display = 'flex';
+        }
     }
 
     // 重ね攻撃表示（baseCard + plusCards を並べる）
@@ -639,7 +658,7 @@ document.addEventListener('DOMContentLoaded', () => {
             actionComboCards.appendChild(makeComboThumb(c, true));
         });
         actionComboTotal.textContent = '合計攻' + totalPower;
-        dmgBadge.textContent = '攻' + totalPower;
+        // dmgBadge廃止
     }
 
     function makeComboThumb(card, isPlus) {
@@ -673,16 +692,88 @@ document.addEventListener('DOMContentLoaded', () => {
         if(player.hp<=10)pHpBar.classList.add('danger'); else pHpBar.classList.remove('danger');
     }
     function renderLog(logArr){
-        if(!logArr)return;
+        // バトルログ表示は廃止（logEl=null）
+        if(!logArr || !logEl) return;
         logEl.innerHTML=logArr.map(l=>'<div class="log-line">'+l+'</div>').join('');
         logEl.scrollTop=0;
     }
-    function showDamageFlash(damage,bonus){
+    function showDamageFlash(damage, attrInfo) {
         const el=document.createElement('div');
-        el.className='dmg-flash'; el.textContent=damage===0?'GUARD!':'-'+damage;
-        if(bonus>=2)el.classList.add('bonus-2x'); else if(bonus>=1.5)el.classList.add('bonus');
-        document.body.appendChild(el); setTimeout(()=>el.remove(),900);
+        el.className='dmg-flash';
+
+        if (!attrInfo || typeof attrInfo === 'number') {
+            // 旧形式のフォールバック
+            el.textContent = damage === 0 ? 'GUARD!' : '-' + damage;
+        } else {
+            const { atkAttr, defEffective, isDark, isLight, isDarkInstakill } = attrInfo;
+            if (damage === 0) {
+                el.textContent = 'GUARD!';
+                el.classList.add('guard');
+            } else if (isDarkInstakill) {
+                el.textContent = '💀 HP0';
+                el.classList.add('instakill');
+            } else if (isLight) {
+                el.textContent = '✨ -' + damage;
+                el.classList.add('bonus-2x');
+            } else if (!defEffective && atkAttr !== 'none' && atkAttr !== 'dark') {
+                // 属性不一致で防御無効
+                el.textContent = '⚠ -' + damage;
+                el.classList.add('bonus');
+            } else {
+                el.textContent = '-' + damage;
+            }
+        }
+        document.body.appendChild(el);
+        setTimeout(()=>el.remove(), 1000);
     }
+
+    // ━━━━━━━━━━━━━━ ターゲット選択モーダル ━━━━━━━━━━━━━━━━━━━━━━
+    function showTargetModal(card, playerSnap, cpuSnap) {
+        // 既存モーダルがあれば削除
+        const old = document.getElementById('target-modal');
+        if (old) old.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'target-modal';
+        modal.className = 'target-modal-overlay';
+
+        // 能力説明テキスト
+        const ab = (card.ability || '').toLowerCase();
+        const hpM = ab.match(/^hp_plus_(\d+)/);
+        const mpM = ab.match(/^mp_plus_(\d+)/);
+        const statLabel = hpM ? 'HP +' + hpM[1] : (mpM ? 'MP +' + mpM[1] : card.ability);
+
+        modal.innerHTML = `
+          <div class="target-modal-box">
+            <div class="target-modal-card-name">「${card.name}」を使用</div>
+            <div class="target-modal-label">${statLabel} を誰に使いますか？</div>
+            <div class="target-modal-btns">
+              <button class="target-btn self-btn" data-target="player">
+                <div class="target-btn-name">${playerSnap.name}</div>
+                <div class="target-btn-stat">HP ${playerSnap.hp} / MP ${playerSnap.mp}</div>
+              </button>
+              <button class="target-btn enemy-btn" data-target="cpu">
+                <div class="target-btn-name">${cpuSnap.name}</div>
+                <div class="target-btn-stat">HP ${cpuSnap.hp} / MP ${cpuSnap.mp}</div>
+              </button>
+            </div>
+          </div>
+        `;
+
+        modal.querySelectorAll('.target-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.target;
+                socket.emit('sundry-target', { target });
+                modal.remove();
+                currentPhase = 'cpu-thinking';
+                phaseLabel.textContent = '⏳ 効果を適用中…';
+                renderHand();
+            });
+        });
+
+        document.body.appendChild(modal);
+    }
+
     function flashWarn(msg){
         const el=document.createElement('div');
         el.className='warn-flash'; el.textContent=msg;

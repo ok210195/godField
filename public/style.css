@@ -105,428 +105,349 @@ body {
 }
 .back-btn { background: none; border: none; color: white; font-size: 1.4rem; cursor: pointer; }
 
-/* ══ バトル画面 ══════════════════════════════════════════════════════════════ */
+/* ══ バトル画面 ════════════════════════════════════════════════════ */
 #battle-container {
-    width: 95%; max-width: 1100px; height: 90vh;
-    display: flex; flex-direction: column; color: white;
-    background: rgba(0,0,0,0.12); border-radius: 14px; overflow: hidden;
+    width: 100%; height: 100vh;
+    display: flex; flex-direction: column;
+    background: radial-gradient(ellipse at 50% 40%, #c8f0e8 0%, #7dd4c0 50%, #4aab96 100%);
+    overflow: hidden;
 }
 
 /* バトルヘッダー */
 .battle-header {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 6px 16px; background: #00897b; border-bottom: 2px solid #004d40;
-    flex-shrink: 0;
+    padding: 4px 12px; background: #00897b; border-bottom: 2px solid #004d40;
+    flex-shrink: 0; height: 36px;
 }
-.battle-title-area { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-#battle-phase-label { font-size: 1rem; font-weight: bold; color: #e0f7fa; }
+.battle-title-area { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+#battle-phase-label { font-size: 0.9rem; font-weight: bold; color: #e0f7fa; }
+.back-btn { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; font-family: inherit; }
+.header-right { font-size: 0.95rem; color: white; }
 
 /* GFバー */
 .gf-row { display: flex; align-items: center; gap: 6px; }
-.gf-text { font-size: 0.8rem; color: #b2dfdb; font-weight: bold; }
-.gf-track {
-    width: 130px; height: 10px; background: rgba(0,0,0,0.35);
-    border-radius: 5px; overflow: hidden; border: 1px solid #4db6ac;
-}
-#gf-bar {
-    height: 100%; width: 0%; border-radius: 5px;
-    background: linear-gradient(90deg, #a5d6a7, #ffee58, #ef5350);
-    transition: width 0.6s ease;
-}
-#gf-bar.gf-danger { background: #ef5350; }
-#gf-num { font-size: 0.85rem; color: #ffe082; font-weight: bold; min-width: 30px; }
+.gf-track { width: 120px; height: 6px; background: rgba(0,0,0,0.3); border-radius: 3px; overflow: hidden; border: 1px solid #4db6ac; }
+#gf-bar { height: 100%; width: 0%; border-radius: 3px; background: linear-gradient(90deg, #a5d6a7, #ffee58, #ef5350); transition: width 0.6s; }
+.gf-label { font-size: 0.8rem; color: #ffe082; font-weight: bold; min-width: 50px; }
 
-/* バトルメイン：左1.2 右0.8 */
+/* ─── バトルメイン ─────────────────────────────────────────────── */
 .battle-main {
-    flex: 1; display: grid; grid-template-columns: 1.3fr 0.7fr;
-    padding: 12px; gap: 12px; overflow: hidden; min-height: 0;
+    flex: 1; display: flex; flex-direction: row;
+    overflow: hidden; min-height: 0;
 }
 
-/* 左：アクションビュー */
-.action-view {
-    display: flex; flex-direction: column; align-items: center; gap: 8px; overflow: hidden;
+/* 左：戦場エリア */
+.battle-field {
+    flex: 1; display: flex; flex-direction: column;
+    justify-content: space-between; padding: 10px 12px;
+    position: relative;
 }
 
-/* 攻撃者→ターゲット（既存HTMLそのまま） */
-.turn-indicator {
-    display: flex; align-items: center; gap: 15px;
-    background: rgba(255,255,255,0.75); padding: 5px 30px; border-radius: 30px;
-    color: #00796b; font-weight: bold; font-size: 1rem; width: 100%;
-    justify-content: center; box-sizing: border-box;
+/* ネームバー（本物のUI） */
+.name-bar {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.55);
+    border-radius: 20px; padding: 4px 16px;
+    max-width: 320px; backdrop-filter: blur(4px);
 }
-.participant { display: flex; align-items: center; gap: 6px; }
-.dot { font-size: 0.8rem; }
-.arrow { font-size: 1.5rem; }
+.enemy-bar  { align-self: flex-start; }
+.player-bar-name { align-self: flex-start; }
+.bar-dot { font-size: 0.7rem; }
+.enemy-dot  { color: #9e9e9e; }
+.player-dot { color: #9e9e9e; }
+.bar-name { font-size: 1rem; font-weight: bold; color: #00695c; }
 
-/* カード表示（既存HTMLそのまま） */
+/* 中央：カード表示＋許すボタン */
+.field-center {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; flex: 1;
+}
+
+/* 使ったカード表示 */
 .card-action-display {
-    width: 100%; background: #fff; border: 3px solid #4db6ac;
-    border-radius: 12px; padding: 12px 16px; box-sizing: border-box;
+    background: transparent;
+    border: none;
+    padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 80px;
 }
-.card-graphic { display: flex; align-items: center; gap: 14px; }
-.card-icon { font-size: 2.8rem; }
-.card-name { color: #004d40; font-size: 1.3rem; font-weight: bold; }
-.card-stats { color: #00796b; font-size: 1.1rem; margin-top: 4px; }
+.action-single { display: flex; align-items: center; gap: 12px; }
+.action-card-img {
+    width: 80px; height: 80px; object-fit: cover;
+    border-radius: 8px; border: 2px solid rgba(255,255,255,0.5);
+    background: rgba(0,0,0,0.1); flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+.action-info { color: #004d40; }
+.action-card-name  { font-size: 1rem; font-weight: bold; }
+.action-card-stats { font-size: 0.9rem; margin-top: 3px; }
 
-/* ダメージバッジ＋許す（既存） */
-.response-area { display: flex; align-items: center; gap: 16px; }
-.damage-badge { font-size: 1.6rem; font-weight: bold; color: #ef5350; min-width: 50px; text-align: center; }
+/* コンボ表示 */
+.action-combo { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.action-combo-cards { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.combo-sep { font-size: 1.2rem; font-weight: bold; color: #ef5350; }
+.combo-thumb { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.combo-thumb-img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; border: 2px solid rgba(255,255,255,0.4); background: #1a1a2e; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+.combo-thumb.is-plus .combo-thumb-img { border-color: #ffb300; }
+.combo-thumb-lbl { font-size: 0.78rem; font-weight: bold; color: #c62828; }
+.combo-thumb.is-plus .combo-thumb-lbl { color: #e65100; }
+.action-combo-total { font-size: 1.2rem; font-weight: bold; color: #c62828; }
+
+/* 許すボタン（透明感、大きく） */
 .forgive-btn {
-    background: #d32f2f; color: white; font-size: 1.8rem;
-    padding: 10px 60px; border-radius: 15px; border: none; cursor: pointer;
-    font-weight: bold; box-shadow: 0 4px #b71c1c; transition: transform .1s;
+    background: rgba(255,255,255,0.25);
+    border: 2px solid rgba(255,255,255,0.5);
+    color: #004d40; font-size: 1.1rem; font-weight: bold;
+    padding: 10px 50px; border-radius: 24px;
+    cursor: pointer; font-family: inherit;
+    backdrop-filter: blur(4px);
+    transition: background .15s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
-.forgive-btn:active { transform: translateY(2px); box-shadow: 0 2px #b71c1c; }
+.forgive-btn:hover { background: rgba(255,255,255,0.45); }
 
-/* ログ */
-.battle-log {
-    width: 100%; flex: 1; overflow-y: auto; min-height: 80px;
-    background: rgba(0,0,0,0.25); border-radius: 10px;
-    padding: 8px 12px; box-sizing: border-box; font-size: 0.82rem; line-height: 1.7;
-}
-.log-line { border-bottom: 1px solid rgba(255,255,255,0.08); padding: 2px 0; }
-.log-line:first-child { color: #ffe082; font-weight: bold; }
-
-/* 右：ステータスパネル */
+/* ─── 右：ステータスパネル ──────────────────────────────────────── */
 .battle-status-panel {
-    display: flex; flex-direction: column; gap: 10px; justify-content: center;
+    width: 260px; flex-shrink: 0;
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 10px 12px 10px 6px;
+    justify-content: flex-start;
 }
+
 .status-card {
-    background: rgba(0,105,92,0.5); border: 2px solid #4db6ac;
-    border-radius: 14px; padding: 12px 14px; box-sizing: border-box;
+    background: rgba(255,255,255,0.75);
+    border-radius: 12px; padding: 10px 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    backdrop-filter: blur(4px);
 }
-.cpu-card { border-color: #ef9a9a; background: rgba(74,20,20,0.4); }
-.sc-name { font-weight: bold; font-size: 1rem; margin-bottom: 8px; color: #e0f7fa; }
+.status-row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.sc-player-name { font-weight: bold; font-size: 1.1rem; color: #004d40; }
+.sc-hand-cnt { font-size: 0.85rem; color: #555; }
+.sc-hand-cnt b { color: #004d40; font-size: 1rem; }
+
 .sc-hp-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-.sc-label { font-size: 0.8rem; color: #b2dfdb; min-width: 22px; }
-.sc-bar-track { flex: 1; height: 10px; background: rgba(0,0,0,0.35); border-radius: 5px; overflow: hidden; }
+.sc-label { font-size: 0.85rem; font-weight: bold; color: #555; min-width: 22px; }
+.sc-bar-track { flex: 1; height: 10px; background: rgba(0,0,0,0.15); border-radius: 5px; overflow: hidden; }
 .sc-bar { height: 100%; border-radius: 5px; width: 100%; transition: width 0.4s; }
-.player-bar { background: linear-gradient(90deg, #66bb6a, #4caf50); }
+.player-hp-bar { background: linear-gradient(90deg, #66bb6a, #4caf50); }
 .cpu-bar    { background: linear-gradient(90deg, #ef5350, #e53935); }
 .sc-bar.danger { background: #ef5350 !important; animation: pulse 0.8s infinite alternate; }
 @keyframes pulse { from { opacity:1; } to { opacity:0.5; } }
-.sc-val { font-weight: bold; font-size: 1.1rem; min-width: 28px; text-align: right; }
-.sc-bottom { display: flex; gap: 12px; font-size: 0.82rem; color: #b2dfdb; }
-.sc-bottom b { color: #fff; }
+.sc-val { font-weight: bold; font-size: 1.1rem; min-width: 28px; text-align: right; color: #004d40; }
 
-.vs-badge {
-    text-align: center; font-size: 1.4rem; font-weight: bold;
-    color: #ffe082; text-shadow: 0 0 8px rgba(255,224,130,0.6);
+.sc-stats-row { display: flex; gap: 16px; }
+.sc-stat { font-size: 1rem; color: #555; }
+.sc-stat b { color: #004d40; font-size: 1.1rem; font-weight: bold; }
+.sc-stat.money b { color: #e65100; }
+
+/* 使ったカードパネル（右下・本物UIに近い） */
+.used-card-panel {
+    background: rgba(255,255,255,0.85); border-radius: 10px;
+    padding: 8px 10px; display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12); margin-top: auto;
 }
+.used-card-img { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+.used-card-info { flex: 1; }
+.used-card-name { font-size: 0.9rem; font-weight: bold; color: #004d40; }
+.used-card-stat { font-size: 0.85rem; color: #555; margin-top: 2px; }
+.used-card-price { font-size: 0.85rem; color: #e65100; font-weight: bold; white-space: nowrap; }
 
-/* バトルフッター：手札 */
+/* ─── フッター：手札 ──────────────────────────────────────────── */
 .battle-footer {
-    background: #004d40; border-top: 2px solid #00695c;
-    padding: 10px 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px;
-    flex-shrink: 0;
+    background: rgba(0,105,92,0.88); border-top: 3px solid #00897b;
+    padding: 4px 10px 6px; display: flex; flex-direction: column;
+    align-items: center; gap: 3px; flex-shrink: 0;
 }
 
-
-
-/* 結果オーバーレイ */
-#result-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
-    display: flex; justify-content: center; align-items: center; z-index: 9000;
+.footer-miracle-row { display: flex; justify-content: flex-end; width: 100%; padding-right: 4px; }
+.miracle-list-btn {
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+    color: white; font-size: 0.85rem; padding: 4px 14px; border-radius: 14px;
+    cursor: pointer; font-family: inherit;
 }
-.result-box {
-    background: #00695c; border: 4px solid #4db6ac; border-radius: 24px;
-    padding: 40px 60px; text-align: center; box-shadow: 0 0 60px rgba(0,0,0,0.5);
-}
-.result-trophy { font-size: 3rem; margin-bottom: 10px; }
-.result-msg { font-size: 2rem; font-weight: bold; color: #ffe082; margin-bottom: 24px; }
-.retry-btn {
-    background: #a1887f; color: #3e2723; border: none; padding: 12px 50px;
-    border-radius: 16px; font-size: 1.4rem; font-weight: bold; cursor: pointer; font-family: inherit;
-}
+.miracle-list-btn:hover { background: rgba(255,255,255,0.25); }
 
-/* ダメージフラッシュ */
+/* ─── ダメージフラッシュ ─────────────────────────────────────── */
 .dmg-flash {
-    position: fixed; top: 38%; left: 50%; transform: translate(-50%, -50%);
-    font-size: 3.5rem; font-weight: bold; color: #ef5350; pointer-events: none; z-index: 9999;
-    text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+    position: fixed; top: 38%; left: 40%; transform: translate(-50%,-50%);
+    font-size: 3rem; font-weight: bold; color: #c62828; pointer-events: none; z-index: 9999;
+    text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
     animation: dmgAnim 0.9s ease-out forwards;
 }
-.dmg-flash.bonus   { color: #ffd54f; }
-.dmg-flash.bonus-2x{ color: #ff6f00; font-size: 4rem; }
+.dmg-flash.bonus   { color: #e65100; }           /* 属性不一致・防御無効 */
+.dmg-flash.bonus-2x{ color: #b71c1c; font-size: 3.8rem; }  /* 光属性・貫通 */
+.dmg-flash.instakill { color: #4a148c; font-size: 3.2rem; text-shadow: 0 0 20px #7b1fa2; } /* 闇即死 */
+.dmg-flash.guard   { color: #1565c0; font-size: 2.4rem; }  /* ガード成功 */
 @keyframes dmgAnim {
-    0%   { opacity:1; transform: translate(-50%,-50%) scale(1); }
-    60%  { opacity:1; transform: translate(-50%,-80%) scale(1.4); }
-    100% { opacity:0; transform: translate(-50%,-120%) scale(0.7); }
+    0%   { opacity:1; transform:translate(-50%,-50%) scale(1); }
+    60%  { opacity:1; transform:translate(-50%,-80%) scale(1.3); }
+    100% { opacity:0; transform:translate(-50%,-120%) scale(0.7); }
 }
 
-/* 警告フラッシュ */
+/* 警告 */
 .warn-flash {
-    position: fixed; bottom: 140px; left: 50%; transform: translateX(-50%);
-    background: rgba(0,0,0,0.8); color: #ffcc02; font-size: 1rem; font-weight: bold;
-    padding: 10px 24px; border-radius: 20px; z-index: 9998;
+    position: fixed; bottom: 160px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.75); color: #ffe082; font-size: 0.9rem; font-weight: bold;
+    padding: 8px 20px; border-radius: 16px; z-index: 9998;
     animation: warnAnim 2s ease forwards;
 }
-@keyframes warnAnim {
-    0%  { opacity:1; } 70% { opacity:1; } 100% { opacity:0; }
-}
+@keyframes warnAnim { 0%{opacity:1;} 70%{opacity:1;} 100%{opacity:0;} }
 
 
+/* ─── 手札エリア ───────────────────────────────────────────── */
+.hand-area {
+    display: flex; flex-direction: row; gap: 5px;
+    justify-content: center; align-items: flex-end;
+    padding: 2px 8px 0; overflow-x: auto; flex-wrap: nowrap;
+}
+.hc-wrap {
+    position: relative; cursor: pointer; flex-shrink: 0;
+    transition: transform .15s; border-radius: 5px; line-height: 0;
+}
+.hc-wrap:hover:not(.unplayable) { transform: translateY(-16px); z-index: 20; box-shadow: 0 8px 20px rgba(0,0,0,0.45); }
+.hc-wrap.unplayable { opacity: 0.5; cursor: not-allowed; }
+.hc-img { display: block; width: 90px; height: 90px; object-fit: cover; border-radius: 5px; pointer-events: none; user-select: none; border: 2px solid rgba(0,0,0,0.15); background: #e0e0e0; }
+.hc-label { text-align: center; font-size: 0.85rem; font-weight: bold; padding: 2px 0 2px; line-height: 1.3; margin-top: 1px; }
+.hc-label.weapon  { color: #ef5350; }
+.hc-label.armor   { color: #1565c0; }
+.hc-label.miracle { color: #6a1b9a; }
+.hc-label.dual    { color: #2e7d32; font-size: 0.72rem; line-height: 1.2; }
+.hc-label.sundry  { color: #e65100; }
+.hc-wrap.dual .hc-img { border-color: rgba(46,125,50,0.5); }
 
-
-/* ══ 守備バー（守備カード重ね中に表示）══════════════════════════ */
-.def-bar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: linear-gradient(90deg, rgba(13,71,161,0.55), rgba(66,165,245,0.25));
-    border: 2px solid #42a5f5;
-    border-radius: 12px;
-    padding: 6px 14px;
-    width: 100%;
-    box-sizing: border-box;
-    margin-bottom: 4px;
-    min-height: 72px;
-}
-.def-cards-row {
-    display: flex; align-items: center; gap: 4px; flex: 1; overflow-x: auto;
-}
-.def-plus-sign { color: #90caf9; font-size: 1.2rem; font-weight: bold; padding: 0 2px; flex-shrink: 0; }
-.def-card-thumb { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
-.def-thumb-img {
-    width: 52px; height: 52px; object-fit: cover; border-radius: 5px;
-    border: 2px solid rgba(144,202,249,0.6); background: #1a1a2e;
-}
-.def-thumb-lbl { font-size: 0.78rem; font-weight: bold; color: #90caf9; margin-top: 2px; }
-.def-bar-center { text-align: center; flex-shrink: 0; }
-.def-total-label { font-size: 0.7rem; color: #90caf9; letter-spacing: 0.05em; }
-.def-total-power {
-    font-size: 2rem; font-weight: bold; color: #fff; line-height: 1.1;
-    text-shadow: 0 0 10px rgba(66,165,245,0.8);
-}
-.def-total-power::before { content: '守'; font-size: 1rem; color: #90caf9; vertical-align: middle; margin-right: 2px; }
-.def-bar-btns { display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; }
-.def-confirm-btn {
-    background: #1565c0; color: #fff; border: none; border-radius: 8px;
-    padding: 8px 14px; font-size: 1rem; font-weight: bold; cursor: pointer; font-family: inherit;
-    box-shadow: 0 3px #0d47a1; transition: transform .1s;
-}
-.def-confirm-btn:active { transform: translateY(2px); box-shadow: none; }
-.def-confirm-btn:hover  { background: #0d47a1; }
-.def-cancel-btn {
-    background: #455a64; color: #cfd8dc; border: none; border-radius: 8px;
-    padding: 5px 14px; font-size: 0.85rem; cursor: pointer; font-family: inherit;
-}
-.def-cancel-btn:hover { background: #37474f; }
-
-/* ══ 攻撃バー（+カード重ね中に表示）══════════════════════════════ */
+/* ─── 攻撃バー ──────────────────────────────────────────────── */
 .atk-bar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: linear-gradient(90deg, rgba(183,28,28,0.55), rgba(239,83,80,0.25));
-    border: 2px solid #ef5350;
-    border-radius: 12px;
-    padding: 6px 14px;
-    width: 100%;
-    box-sizing: border-box;
-    margin-bottom: 4px;
-    min-height: 72px;
+    display: flex; align-items: center; gap: 10px;
+    background: linear-gradient(90deg, rgba(183,28,28,0.5), rgba(239,83,80,0.2));
+    border: 2px solid #ef5350; border-radius: 10px;
+    padding: 5px 12px; width: 100%; box-sizing: border-box; min-height: 68px;
 }
-
-/* 重ねたカードのサムネイル列 */
-.atk-cards-row {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex: 1;
-    overflow-x: auto;
-}
-.atk-plus-sign {
-    color: #ffcdd2;
-    font-size: 1.2rem;
-    font-weight: bold;
-    padding: 0 2px;
-    flex-shrink: 0;
-}
-.atk-card-thumb {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex-shrink: 0;
-}
-.atk-card-thumb.is-plus .atk-thumb-img {
-    box-shadow: 0 0 0 2px #ffb300;
-}
-.atk-thumb-img {
-    width: 52px;
-    height: 52px;
-    object-fit: cover;
-    border-radius: 5px;
-    border: 2px solid rgba(255,255,255,0.35);
-    background: #1a1a2e;
-}
-.atk-thumb-lbl {
-    font-size: 0.78rem;
-    font-weight: bold;
-    color: #ffcdd2;
-    margin-top: 2px;
-}
-.atk-card-thumb.is-plus .atk-thumb-lbl {
-    color: #ffb300;
-}
-
-/* 中央：合計攻撃力 */
-.atk-bar-center {
-    text-align: center;
-    flex-shrink: 0;
-}
-.atk-total-label {
-    font-size: 0.7rem;
-    color: #ffcdd2;
-    letter-spacing: 0.05em;
-}
-.atk-total-power {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #fff;
-    line-height: 1.1;
-    text-shadow: 0 0 10px rgba(239,83,80,0.8);
-}
-.atk-total-power::before { content: '攻'; font-size: 1rem; color: #ffcdd2; vertical-align: middle; margin-right: 2px; }
-
-/* ボタン群 */
-.atk-bar-btns {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    flex-shrink: 0;
-}
-.atk-confirm-btn {
-    background: #ef5350; color: #fff; border: none; border-radius: 8px;
-    padding: 8px 18px; font-size: 1rem; font-weight: bold; cursor: pointer; font-family: inherit;
-    box-shadow: 0 3px #b71c1c;
-    transition: transform .1s;
-}
+.atk-cards-row { display: flex; align-items: center; gap: 4px; flex: 1; overflow-x: auto; }
+.atk-plus-sign { color: #ffcdd2; font-size: 1.1rem; font-weight: bold; padding: 0 2px; flex-shrink: 0; }
+.atk-card-thumb { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+.atk-card-thumb.is-plus .atk-thumb-img { box-shadow: 0 0 0 2px #ffb300; }
+.atk-thumb-img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 2px solid rgba(255,255,255,0.3); background: #1a1a2e; }
+.atk-thumb-lbl { font-size: 0.72rem; font-weight: bold; color: #ffcdd2; margin-top: 2px; }
+.atk-card-thumb.is-plus .atk-thumb-lbl { color: #ffb300; }
+.atk-bar-center { text-align: center; flex-shrink: 0; }
+.atk-total-label { font-size: 0.65rem; color: #ffcdd2; }
+.atk-total-power { font-size: 1.8rem; font-weight: bold; color: #fff; line-height: 1.1; text-shadow: 0 0 10px rgba(239,83,80,0.8); }
+.atk-total-power::before { content: '攻'; font-size: 0.9rem; color: #ffcdd2; vertical-align: middle; margin-right: 2px; }
+.atk-bar-btns { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+.atk-confirm-btn { background: #ef5350; color: #fff; border: none; border-radius: 7px; padding: 7px 14px; font-size: 0.95rem; font-weight: bold; cursor: pointer; font-family: inherit; box-shadow: 0 3px #b71c1c; transition: transform .1s; }
 .atk-confirm-btn:active { transform: translateY(2px); box-shadow: none; }
-.atk-confirm-btn:hover  { background: #c62828; }
-.atk-cancel-btn {
-    background: #455a64; color: #cfd8dc; border: none; border-radius: 8px;
-    padding: 5px 14px; font-size: 0.85rem; cursor: pointer; font-family: inherit;
-}
+.atk-confirm-btn:hover { background: #c62828; }
+.atk-cancel-btn { background: #455a64; color: #cfd8dc; border: none; border-radius: 7px; padding: 4px 12px; font-size: 0.82rem; cursor: pointer; font-family: inherit; }
 .atk-cancel-btn:hover { background: #37474f; }
 
-/* ══ 手札エリア ══════════════════════════════════════════════════ */
-.hand-area {
-    display: flex;
-    flex-direction: row;
-    gap: 6px;
-    justify-content: center;
-    align-items: flex-end;
-    padding: 4px 8px 0;
-    overflow-x: auto;
-    flex-wrap: nowrap;
+/* ─── 守備バー ──────────────────────────────────────────────── */
+.def-bar {
+    display: flex; align-items: center; gap: 10px;
+    background: linear-gradient(90deg, rgba(13,71,161,0.5), rgba(66,165,245,0.2));
+    border: 2px solid #42a5f5; border-radius: 10px;
+    padding: 5px 12px; width: 100%; box-sizing: border-box; min-height: 68px;
 }
+.def-cards-row { display: flex; align-items: center; gap: 4px; flex: 1; overflow-x: auto; }
+.def-plus-sign { color: #90caf9; font-size: 1.1rem; font-weight: bold; padding: 0 2px; flex-shrink: 0; }
+.def-card-thumb { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+.def-thumb-img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 2px solid rgba(144,202,249,0.6); background: #1a1a2e; }
+.def-thumb-lbl { font-size: 0.72rem; font-weight: bold; color: #90caf9; margin-top: 2px; }
+.def-bar-center { text-align: center; flex-shrink: 0; }
+.def-total-label { font-size: 0.65rem; color: #90caf9; }
+.def-total-power { font-size: 1.8rem; font-weight: bold; color: #fff; line-height: 1.1; text-shadow: 0 0 10px rgba(66,165,245,0.8); }
+.def-total-power::before { content: '守'; font-size: 0.9rem; color: #90caf9; vertical-align: middle; margin-right: 2px; }
+.def-bar-btns { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+.def-confirm-btn { background: #1565c0; color: #fff; border: none; border-radius: 7px; padding: 7px 10px; font-size: 0.95rem; font-weight: bold; cursor: pointer; font-family: inherit; box-shadow: 0 3px #0d47a1; transition: transform .1s; }
+.def-confirm-btn:active { transform: translateY(2px); box-shadow: none; }
+.def-confirm-btn:hover { background: #0d47a1; }
+.def-cancel-btn { background: #455a64; color: #cfd8dc; border: none; border-radius: 7px; padding: 4px 12px; font-size: 0.82rem; cursor: pointer; font-family: inherit; }
+.def-cancel-btn:hover { background: #37474f; }
 
-/* 個別カードラッパー */
-.hc-wrap {
-    position: relative;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: transform .15s, box-shadow .15s;
-    border-radius: 6px;
-    line-height: 0;
-}
-.hc-wrap:hover:not(.unplayable) {
-    transform: translateY(-16px);
-    z-index: 20;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-}
-.hc-wrap.unplayable {
-    filter: brightness(0.38) saturate(0.2);
-    cursor: not-allowed;
-}
-
-/* カード画像（大きめ正方形） */
-.hc-img {
-    display: block;
-    width: 90px;
-    height: 90px;
-    object-fit: cover;
-    border-radius: 6px;
-    pointer-events: none;
-    user-select: none;
-    border: 2px solid rgba(255,255,255,0.4);
-    background: #1a1a2e;  /* 画像読み込み前の背景色 */
-}
-
-/* 攻撃力/防御力ラベル */
-.hc-label {
-    text-align: center;
-    font-size: 0.88rem;
-    font-weight: bold;
-    padding: 3px 0 2px;
-    border-radius: 0 0 6px 6px;
-    line-height: 1.3;
-    margin-top: -2px;
-    letter-spacing: 0.02em;
-}
-.hc-label.weapon  { color: #ef9a9a; }
-.hc-label.armor   { color: #90caf9; }
-.hc-label.miracle { color: #ce93d8; }
-/* 攻守両用カード：2行になるので小さめに */
-.hc-label.dual    { color: #a5d6a7; font-size: 0.72rem; line-height: 1.2; }
-
-/* 攻守両用カードの枠色 */
-.hc-wrap.dual .hc-img { border-color: rgba(165,214,167,0.6); }
-
-/* ══ カード詳細パネル（ホバー時）══════════════════════════════════ */
+/* ─── カード詳細パネル ──────────────────────────────────────── */
 .card-detail-panel {
-    position: fixed;
-    width: 165px;
-    background: #e8f5e9;
-    border: 2px solid #4db6ac;
-    border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.35);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
-    z-index: 9990;
-    pointer-events: none;
+    position: fixed; width: 165px;
+    background: #e8f5e9; border: 2px solid #4db6ac; border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.35); display: flex; align-items: center;
+    gap: 10px; padding: 8px 10px; z-index: 9990; pointer-events: none;
 }
 .card-detail-panel.weapon  { border-color: #ef5350; background: #fff8f8; }
 .card-detail-panel.armor   { border-color: #42a5f5; background: #f0f8ff; }
 .card-detail-panel.miracle { border-color: #ab47bc; background: #f8f0ff; }
 .card-detail-panel.dual    { border-color: #66bb6a; background: #f0fff0; }
-
-.cd-img {
-    width: 52px; height: 52px;
-    object-fit: cover; border-radius: 4px; flex-shrink: 0;
-    border: 1px solid rgba(0,0,0,0.15);
-}
+.cd-img { width: 52px; height: 52px; object-fit: cover; border-radius: 4px; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.15); }
 .cd-body { flex:1; overflow:hidden; }
 .cd-name  { font-size:0.82rem; font-weight:bold; color:#004d40; word-break:break-all; }
-.cd-power { font-size:1.05rem; font-weight:bold; color:#00796b; margin-top:3px; }
+.cd-power { font-size:1rem; font-weight:bold; color:#00796b; margin-top:3px; }
 .cd-ability { font-size:0.65rem; color:#6a1b9a; margin-top:2px; line-height:1.3; }
 .cd-price { font-size:0.7rem; color:#f57f17; margin-top:2px; font-weight:bold; }
 
-/* ── 使ったカード表示エリア（画像対応） ── */
-.action-single {
-    display: flex; align-items: center; gap: 12px; width: 100%;
+/* ─── 結果オーバーレイ ──────────────────────────────────────── */
+#result-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 9000; }
+.result-box { background: #00695c; border: 4px solid #4db6ac; border-radius: 24px; padding: 40px 60px; text-align: center; box-shadow: 0 0 60px rgba(0,0,0,0.5); }
+.result-trophy { font-size: 3rem; margin-bottom: 10px; }
+.result-msg { font-size: 2rem; font-weight: bold; color: #ffe082; margin-bottom: 24px; }
+.retry-btn { background: #a1887f; color: #3e2723; border: none; padding: 12px 50px; border-radius: 16px; font-size: 1.4rem; font-weight: bold; cursor: pointer; font-family: inherit; }
+/* ── ターゲット選択モーダル ──────────────────────────────────── */
+.target-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 8000;
+    animation: modalFadeIn 0.15s ease;
 }
-.action-card-img {
-    width: 72px; height: 72px; object-fit: cover; border-radius: 8px;
-    border: 2px solid #4db6ac; background: #1a1a2e; flex-shrink: 0;
+@keyframes modalFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
-.action-info { flex: 1; }
-.action-card-name  { font-size: 1.1rem; font-weight: bold; color: #004d40; }
-.action-card-stats { font-size: 1rem; color: #00796b; margin-top: 4px; }
+.target-modal-box {
+    background: linear-gradient(160deg, #e0f7fa, #b2ebf2);
+    border: 3px solid #00897b;
+    border-radius: 20px;
+    padding: 28px 32px 24px;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    min-width: 300px;
+    animation: modalSlideUp 0.18s ease;
+}
+@keyframes modalSlideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+.target-modal-card-name {
+    font-size: 1.1rem; font-weight: bold; color: #004d40;
+    margin-bottom: 4px;
+}
+.target-modal-label {
+    font-size: 1.3rem; font-weight: bold; color: #00695c;
+    margin-bottom: 20px;
+}
+.target-modal-btns {
+    display: flex; gap: 16px; justify-content: center;
+}
+.target-btn {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 14px 24px; border-radius: 14px;
+    border: 3px solid transparent; cursor: pointer;
+    font-family: inherit; transition: transform 0.12s, box-shadow 0.12s;
+    min-width: 110px;
+}
+.target-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+}
+.target-btn:active { transform: translateY(0); }
 
-/* ── 重ね攻撃コンボ表示 ── */
-.action-combo { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
-.action-combo-cards { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; }
-.combo-sep { font-size: 1.2rem; font-weight: bold; color: #ef5350; }
-.combo-thumb { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-.combo-thumb-img {
-    width: 58px; height: 58px; object-fit: cover; border-radius: 6px;
-    border: 2px solid rgba(255,255,255,0.3); background: #1a1a2e;
+.self-btn {
+    background: linear-gradient(135deg, #c8e6c9, #a5d6a7);
+    border-color: #43a047; color: #1b5e20;
 }
-.combo-thumb.is-plus .combo-thumb-img { border-color: #ffb300; }
-.combo-thumb-lbl { font-size: 0.78rem; font-weight: bold; color: #ffcdd2; }
-.combo-thumb.is-plus .combo-thumb-lbl { color: #ffb300; }
-.action-combo-total { font-size: 1.3rem; font-weight: bold; color: #ef5350; letter-spacing: 0.05em; }
+.enemy-btn {
+    background: linear-gradient(135deg, #ffcdd2, #ef9a9a);
+    border-color: #e53935; color: #b71c1c;
+}
+.target-btn-name {
+    font-size: 1rem; font-weight: bold; margin-bottom: 5px;
+}
+.target-btn-stat {
+    font-size: 0.8rem; opacity: 0.85;
+}

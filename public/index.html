@@ -16,7 +16,7 @@
     </div>
 </div>
 
-<!-- ══ ロビー（既存デザインそのまま） ══ -->
+<!-- ══ ロビー ══ -->
 <div id="lobby-container" style="display:none;">
     <header class="lobby-header">
         <button class="back-btn">←</button>
@@ -79,7 +79,7 @@
         <div class="header-right">📖 教典</div>
     </header>
 
-    <!-- メイン：左＝アクション、右＝ステータス -->
+    <!-- メイン -->
     <main class="battle-main">
 
         <!-- 左：アクション演出 -->
@@ -98,9 +98,11 @@
                 </div>
             </div>
 
-            <!-- 使ったカード表示（画像＋重ね情報） -->
+            <!-- 警告バナー（武器があると祈れない等） -->
+            <div id="battle-banner" class="battle-banner" style="display:none;"></div>
+
+            <!-- 使ったカード表示 -->
             <div class="card-action-display" id="card-action-display">
-                <!-- 単体カード表示（CPU攻撃・通常攻撃） -->
                 <div class="action-single" id="action-single">
                     <img id="action-img" class="action-card-img" src="" alt="">
                     <div class="action-info">
@@ -108,7 +110,6 @@
                         <div class="action-card-stats" id="action-card-stats"></div>
                     </div>
                 </div>
-                <!-- 重ね攻撃表示（player-attacked で atk-bar の内容をここにも出す） -->
                 <div class="action-combo" id="action-combo" style="display:none;">
                     <div class="action-combo-cards" id="action-combo-cards"></div>
                     <div class="action-combo-total" id="action-combo-total"></div>
@@ -128,33 +129,45 @@
         <!-- 右：HPステータス -->
         <div class="battle-status-panel">
 
-            <div class="status-card" id="player-status-card">
-                <div class="sc-name" id="player-sc-name">あなた</div>
+            <!-- CPU -->
+            <div class="status-card cpu-card" id="cpu-status-card">
+                <div class="sc-header">
+                    <div class="sc-dot cpu-dot"></div>
+                    <div class="sc-name" id="cpu-sc-name">CPU</div>
+                    <div class="sc-hand-badge">🃏 <b id="cpu-hand-cnt">9</b></div>
+                </div>
                 <div class="sc-hp-row">
                     <span class="sc-label">HP</span>
-                    <div class="sc-bar-track"><div class="sc-bar player-bar" id="player-hp-bar"></div></div>
-                    <span class="sc-val" id="player-hp-val">40</span>
+                    <div class="sc-bar-track">
+                        <div class="sc-bar cpu-bar" id="cpu-hp-bar"></div>
+                    </div>
+                    <span class="sc-val" id="cpu-hp-val">40</span>
                 </div>
                 <div class="sc-bottom">
-                    <span>MP <b id="player-mp-val">10</b></span>
-                    <span>￥ <b id="player-money-val">20</b></span>
-                    <span>🃏 <b id="player-hand-cnt">9</b></span>
+                    <span class="sc-stat">MP <b id="cpu-mp-val">10</b></span>
+                    <span class="sc-stat money">¥ <b id="cpu-money-val">20</b></span>
                 </div>
             </div>
 
             <div class="vs-badge">VS</div>
 
-            <div class="status-card cpu-card" id="cpu-status-card">
-                <div class="sc-name" id="cpu-sc-name">CPU</div>
+            <!-- Player -->
+            <div class="status-card player-card" id="player-status-card">
+                <div class="sc-header">
+                    <div class="sc-dot player-dot"></div>
+                    <div class="sc-name" id="player-sc-name">あなた</div>
+                    <div class="sc-hand-badge">🃏 <b id="player-hand-cnt">9</b></div>
+                </div>
                 <div class="sc-hp-row">
                     <span class="sc-label">HP</span>
-                    <div class="sc-bar-track"><div class="sc-bar cpu-bar" id="cpu-hp-bar"></div></div>
-                    <span class="sc-val" id="cpu-hp-val">40</span>
+                    <div class="sc-bar-track">
+                        <div class="sc-bar player-bar" id="player-hp-bar"></div>
+                    </div>
+                    <span class="sc-val" id="player-hp-val">40</span>
                 </div>
                 <div class="sc-bottom">
-                    <span>MP <b id="cpu-mp-val">10</b></span>
-                    <span>￥ <b id="cpu-money-val">20</b></span>
-                    <span>🃏 <b id="cpu-hand-cnt">9</b></span>
+                    <span class="sc-stat">MP <b id="player-mp-val">10</b></span>
+                    <span class="sc-stat money">¥ <b id="player-money-val">20</b></span>
                 </div>
             </div>
 
@@ -163,8 +176,7 @@
 
     <!-- フッター：手札 -->
     <footer class="battle-footer">
-        <!-- +カード重ねバー（addingフェーズ中のみ表示） -->
-        <!-- 守備バー：重ねた守備カードを画像で表示 -->
+        <!-- 守備バー -->
         <div id="def-bar" class="def-bar" style="display:none;">
             <div class="def-cards-row" id="def-cards-row"></div>
             <div class="def-bar-center">
@@ -177,11 +189,9 @@
             </div>
         </div>
 
-        <!-- 攻撃バー：重ねたカードを画像で表示 -->
+        <!-- 攻撃バー -->
         <div id="atk-bar" class="atk-bar" style="display:none;">
-            <div class="atk-cards-row" id="atk-cards-row">
-                <!-- JSで動的にカード画像を追加 -->
-            </div>
+            <div class="atk-cards-row" id="atk-cards-row"></div>
             <div class="atk-bar-center">
                 <div class="atk-total-label">合計攻撃力</div>
                 <div class="atk-total-power" id="atk-bar-power">0</div>
@@ -191,7 +201,14 @@
                 <button id="atk-cancel-btn"  class="atk-cancel-btn">戻す</button>
             </div>
         </div>
-        <div class="hand-area" id="hand-area"></div>
+
+        <!-- 手札行：左に祈るボタン、右に手札 -->
+        <div class="hand-row">
+            <div class="hand-action-col">
+                <button id="pray-btn" class="pray-btn" style="display:none;">🙏 祈る</button>
+            </div>
+            <div class="hand-area" id="hand-area"></div>
+        </div>
     </footer>
 </div>
 
